@@ -14,7 +14,9 @@ There's no money yet to deploy an on-chain program, so the platform holds escrow
 2. **Detection:** the worker calls `getSignaturesForAddress(reference)` and validates the tx: correct mint, recipient ATA, amount ≥ expected, confirmed/finalized. → booking `funded`, `funding_tx` saved.
 3. **Release:** `payout = amount - fee`; the worker sends `payout` USDC to the seller's linked wallet and `fee` to the treasury.
 4. **Refund:** the worker sends `amount` back to the paying wallet (the source owner of the funding tx).
-5. Every payout/refund tx signature is stored in `settlement_tx`. **Idempotency:** settlement takes a row lock and checks `settlement_tx IS NULL` first.
+5. **Idempotency (implemented in `apps/worker/src/jobs/settle.ts`):** the worker signs the tx first, stores the signature + `lastValidBlockHeight` with a compare-and-set (`WHERE settlement_tx IS NULL`), *then* sends. Later ticks poll the signature: confirmed → final status; expired/failed → clear and re-prepare. A crash at any point can't double-pay.
+6. **Underpayments** (less than the booking amount) aren't matched and stay in escrow → manual refund for now (Phase 2: auto-refund).
+7. **Setup:** `pnpm --filter @adspaces/worker setup-escrow` generates the escrow keypair and creates its USDC account.
 
 ### Fee math (`packages/shared/src/fees.ts`)
 - `fee = floor(amount * fee_bps / 10_000)`, `payout = amount - fee` (rounding always favors the seller).

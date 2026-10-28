@@ -37,6 +37,9 @@
 - **The worker is decoupled** from web traffic. It batches X lookups (100 users/request) and uses Postgres `FOR UPDATE SKIP LOCKED` so several workers can run safely.
 - Stateless web tier → scales horizontally on Vercel with no changes.
 
+## File storage
+Creatives go to **Vercel Blob** when `BLOB_READ_WRITE_TOKEN` is set (required on Vercel). Otherwise they're written to `UPLOAD_DIR` (default `apps/web/.uploads`) and served by `/api/uploads/[name]`, for local dev and self-hosting.
+
 ## Key interfaces (swap points)
 - `BannerSource` (packages/shared): `getBanners(xUserIds) → Map<id, bannerUrl|null>`. Implementations: `XApiBannerSource`, `MockBannerSource`.
 - `PaymentsProvider` (packages/shared): `createPaymentRequest`, `findPayment`, `release`, `refund`. Implementations: `CustodialSolanaPayProvider` (now), `EscrowProgramProvider` (later, see ADR-0006).

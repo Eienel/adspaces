@@ -16,4 +16,4 @@ Estimate daily profile visits from API-available signals (followers, recent post
 
 ## Consequences
 - The heuristics need tuning once we have real data; constants are centralized.
-- Profile sync needs a recent-posts read (extra X API cost, ~20 post reads ≈ $0.10 per sync with pay-per-use pricing; sync at most daily).
+- Profile sync reads the user + ~10 recent posts (≈ $0.11 per sync with pay-per-use pricing). Synced at every login and **weekly** by the worker for sellers with active listings (`METRICS_SYNC_DAYS=7`).

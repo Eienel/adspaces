@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0b0d12;
+  --panel: #131722;
+  --border: #232838;
+  --text: #e8eaf0;
+  --muted: #8b93a7;
+  --accent: #7c5cff;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+@layer components {
+  .panel { @apply rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-semibold transition hover:bg-white/5 disabled:opacity-50; }
+  .input { @apply w-full rounded-xl border border-[var(--border)] bg-black/30 px-3 py-2 text-sm outline-none focus:border-[var(--accent)]; }
+  .label { @apply mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--muted)]; }
+  .muted { @apply text-[var(--muted)]; }
+}
