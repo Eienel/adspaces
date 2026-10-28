@@ -1,0 +1,50 @@
+# AdSpaces background worker on a free GitHub Actions schedule (ADR-0016).
+# Each run does one pass of every job (payments, weekly cycle, verification, settlement) and exits.
+# Jobs are idempotent, so late, skipped or repeated runs are safe.
+name: worker
+
+on:
+  schedule:
+    - cron: "*/5 * * * *" # GitHub may delay scheduled runs by several minutes under load
+  workflow_dispatch: {}
+
+concurrency:
+  group: worker
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Does nothing until the owner sets the WORKER_ENABLED repository variable to "true" (see docs/10-launch-runbook.md).
+    if: vars.WORKER_ENABLED == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter "@adspaces/worker..."
+      - name: Run worker once
+        run: pnpm --filter @adspaces/worker start -- --once
+        env:
+          NODE_ENV: production
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BANNER_SOURCE: ${{ vars.BANNER_SOURCE || 'owned' }}
+          PAYMENTS_PROVIDER: ${{ vars.PAYMENTS_PROVIDER || 'solana' }}
+          ALLOW_DEV_PAYMENTS: ${{ vars.ALLOW_DEV_PAYMENTS }}
+          VERIFY_CHECKS_PER_DAY: ${{ vars.VERIFY_CHECKS_PER_DAY || '2' }}
+          MAX_BOOKING_USDC: ${{ vars.MAX_BOOKING_USDC || '1000' }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          AUTH_TWITTER_ID: ${{ secrets.AUTH_TWITTER_ID }}
+          AUTH_TWITTER_SECRET: ${{ secrets.AUTH_TWITTER_SECRET }}
+          TOKEN_ENC_KEY: ${{ secrets.TOKEN_ENC_KEY }}
+          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+          USDC_MINT: ${{ vars.USDC_MINT || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' }}
+          ESCROW_WALLET_SECRET: ${{ secrets.ESCROW_WALLET_SECRET }}
+          TREASURY_WALLET: ${{ secrets.TREASURY_WALLET }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}

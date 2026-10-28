@@ -220,3 +220,30 @@ describe.skipIf(!url)("worker lifecycle: multi-ad banner, weekly cycle", () => {
     expect(payments.sent).toEqual([{ kind: "refund", recipient: "Biz1Wallet", amount: 7_000_000, bookingId: b1.id }]);
   });
 });
+
+describe.skipIf(!url)("escrow solvency", () => {
+  it("counts paid-but-unsettled bookings as owed and alerts when the balance is short", async () => {
+    const { checkSolvency, owedMicro } = await import("../src/jobs/solvency");
+    const db = createDb(url!, { max: 1 });
+    await db.execute(sql`truncate verifications, banner_compositions, bookings, ad_campaigns, segments, creatives, listings, wallet_challenges, users cascade`);
+    const [u] = await db.insert(users).values({ xId: "dev:s", handle: "s", name: "S", walletPubkey: "SW" }).returning();
+    const [l] = await db.insert(listings).values({ sellerId: u!.id, title: "t" }).returning();
+    const [s] = await db.insert(segments).values({ listingId: l!.id, idx: 0, shape: "full", x: 0, y: 0, w: 1500, h: 500, pricePerDayUsdc: 1 }).returning();
+    const [c] = await db.insert(creatives).values({ advertiserId: u!.id, shape: "full", imageUrl: "x", phash: "x", width: 1500, height: 500 }).returning();
+    const base = { segmentId: s!.id, listingId: l!.id, sellerId: u!.id, advertiserId: u!.id, creativeId: c!.id, origin: "business_request" as const, adCategory: "crypto", cycleStart: CYCLE, weeks: 1, feeBps: 250 };
+    await db.insert(bookings).values([
+      { ...base, amountUsdc: 5_000_000, status: "funded" },
+      { ...base, amountUsdc: 7_000_000, status: "live" },
+      { ...base, amountUsdc: 3_000_000, status: "cancelled", fundingTx: "late-pay" },
+      { ...base, amountUsdc: 9_000_000, status: "completed", settledAt: new Date() },
+      { ...base, amountUsdc: 1_000_000, status: "accepted" },
+    ]);
+    expect(await owedMicro({ db })).toBe(15_000_000);
+    const logs: string[] = [];
+    const ctx = { db, log: (m: string) => logs.push(m) } as unknown as JobContext;
+    expect(await checkSolvency(ctx, async () => 15_000_000)).toBe("ok");
+    expect(await checkSolvency(ctx, async () => 14_999_999)).toBe("short");
+    expect(logs.some((m) => m.startsWith("ALERT"))).toBe(true);
+    await (db as unknown as { $client: { end: () => Promise<void> } }).$client.end();
+  });
+});

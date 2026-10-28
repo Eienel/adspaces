@@ -12,6 +12,7 @@ import { runCycle } from "./jobs/cycle";
 import { syncSellerMetrics } from "./jobs/metrics";
 import { watchPayments } from "./jobs/payments";
 import { settleBookings } from "./jobs/settle";
+import { checkSolvency } from "./jobs/solvency";
 import { verifyBanners } from "./jobs/verify";
 import { CustodialSolanaPayProvider } from "./solana-payments";
 
@@ -32,8 +33,8 @@ const banners: BannerSource =
       ? new OwnedTokenBannerSource(db, { clientId: env.xClientId, clientSecret: env.xClientSecret, encKey: env.tokenEncKey }, appSource)
       : appSource!;
 
-const payments: PaymentsProvider =
-  env.paymentsProvider === "solana" ? new CustodialSolanaPayProvider(new Connection(env.solanaRpcUrl, "confirmed"), env) : new DevPaymentsProvider();
+const custodial = env.paymentsProvider === "solana" ? new CustodialSolanaPayProvider(new Connection(env.solanaRpcUrl, "confirmed"), env) : null;
+const payments: PaymentsProvider = custodial ?? new DevPaymentsProvider();
 
 const ctx: JobContext = {
   db,
@@ -73,6 +74,7 @@ async function main() {
   if (env.paymentsProvider === "dev") ctx.log("WARNING: dev payments — no real money moves. Use PAYMENTS_PROVIDER=solana outside dev.");
   // Fail fast (non-zero exit) only if the database is unreachable; job errors are logged and retried next tick.
   await db.execute(sql`select 1`);
+  if (custodial) await checkSolvency(ctx, () => custodial.escrowBalanceMicro()).catch((err) => ctx.log("solvency check failed", { err: String(err) }));
   if (once) {
     // One pass for schedulers like GitHub Actions cron (ADR-0016).
     await tick();

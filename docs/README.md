@@ -19,6 +19,7 @@ A marketplace where X (Twitter) users rent out their **profile banner (header im
 | [07-security-legal.md](07-security-legal.md) | Keys, custody, X ToS, ad disclosure, compliance |
 | [08-profile-valuation.md](08-profile-valuation.md) | Profile worth estimate → max price per day |
 | [09-token.md](09-token.md) | Planned token on Meteora DBC, virality burns (Phase 4) |
+| [10-launch-runbook.md](10-launch-runbook.md) | Step-by-step real-money launch checklist |
 | [12-vercel-preview.md](12-vercel-preview.md) | Live staging demo on Vercel in dev mode ($0) |
 | [roadmap.md](roadmap.md) | Phased checklist — **keep updated** |
 | [decisions/](decisions/) | Architecture Decision Records (ADRs) — one per meaningful choice |

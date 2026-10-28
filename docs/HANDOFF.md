@@ -3,7 +3,7 @@
 > A living document. **Every session updates it before ending** so the next session (human or agent) can continue cold.
 > History lives in `log/`, decisions in `decisions/`, the plan in `roadmap.md`. This page is just "where are we now".
 
-_Last updated: 2026-10-28, session 3 (in progress)_
+_Last updated: 2026-10-28, end of session 3 (launch-ready beta)_
 
 ## One-line summary
 AdSpaces = marketplace where X creators split their **banner into ad slots** and rent them to businesses for **USDC on Solana**. Payment goes into a **platform escrow wallet** (custodial, no Solana program). A worker **verifies each slot** in the creator's live banner and pays out (minus a 0.75–2.5% fee) or refunds.
@@ -23,6 +23,10 @@ AdSpaces = marketplace where X creators split their **banner into ad slots** and
 | Per-slot verification (dHash + colour) | tested | `jobs/verify.ts`, `packages/shared/src/compose.ts` |
 | Escrow settlement (release with fee / refund), idempotent | tested with fake chain; **real Solana untested** | `jobs/settle.ts`, `src/solana-payments.ts` |
 | $0 dev mode (fake X, simulated payments/banners, `run-at` clock) | tested | ADR-0013, README |
+| Tiered fees 2.5/1.5/0.75% + $1,000 beta cap | tested (unit + live e2e) | `packages/shared/src/fees.ts`, `apps/web/lib/bookings.ts` |
+| **Live staging demo** (dev mode) | https://web-6wfa.vercel.app, live e2e passes | `docs/12-vercel-preview.md` |
+| Worker on GitHub Actions (every 5 min) | workflow written + linted, **not yet enabled** (needs secrets + `WORKER_ENABLED=true`) | `.github/workflows/worker.yml` |
+| Escrow solvency alert | tested | `apps/worker/src/jobs/solvency.ts` |
 
 ## Parallel sessions (2026-10-28)
 Two sessions are running at once. To avoid merge conflicts:
@@ -39,23 +43,20 @@ Rules for the design session:
 - Before finishing: `pnpm typecheck` + `pnpm --filter @adspaces/web build`, screenshots (desktop + mobile), push your branch, and update the "Design" row here.
 - Merging: whichever session finishes second merges the other branch (`git merge`, no rebase) and resolves conflicts in favour of design for styling and launch for logic.
 
-## In progress (session 3: launch-ready beta)
-Plan: `/root/.claude/plans/…` is not in the repo, so the plan is copied here:
-- [x] Fee tiers by booking size: <$100 → 2.5%, $100–499 → 1.5%, ≥$500 → 0.75% (`packages/shared/src/fees.ts` `feeBpsForAmount`), tests added
-- [x] Use tiers + **$1,000 beta cap** (`MAX_BOOKING_USDC`) in `apps/web/lib/bookings.ts`; fee line in booking/offer forms (`components/fee-line.tsx`); fee table on home (`components/fee-table.tsx`)
-- [ ] Worker `--once` mode + `.github/workflows/worker.yml` (cron every 5 min, free because the repo is public) + `ci.yml`
-- [~] Production guards: web startup check done (`apps/web/instrumentation.ts`); worker guard pending
-- [x] `/terms` + `/privacy` beta pages, footer links
-- [ ] `docs/10-launch-runbook.md` (X app, Neon, Solana wallets, Vercel, GitHub secrets, $1 smoke test)
-- [ ] ADR-0014 (fees), ADR-0015 (beta cap), ADR-0016 (GitHub Actions worker); update 04/06/00 docs
+## Session 3 result (launch-ready beta): done
+All items shipped: fee tiers, beta cap, `/terms` + `/privacy`, prod guards (web + worker), worker `--once` + GitHub Actions + CI, launch runbook, ADR-0014..0017. Details: `log/2026-10-28-session-3.md`.
 
 ## Vercel
-Owner is connecting Vercel for a **dev-mode staging demo** (no X credits, no money): see `docs/12-vercel-preview.md`. `apps/web` has a `vercel-build` script (migrate + build). Preview URLs per branch, so the design branch can be reviewed live.
+**Live staging demo:** https://web-6wfa.vercel.app (dev mode: Neon with isolated preview copies, public Blob, `DEV_LOGIN=1` + `ALLOW_DEV_LOGIN=1`). Pushes to `claude/pensive-faraday-5frreq` deploy production; other branches get preview URLs. `vercel-build` = migrate + build. Re-run the live e2e:
+```bash
+cd apps/web && BASE=https://web-6wfa.vercel.app E2E_HANDLE=newname NODE_USE_ENV_PROXY=1 node scripts/e2e.mjs
+```
 
-## Next after that
-1. **Redesign (being done in parallel by the Design session, see above)** to feel like https://blink.cash and https://wspr.ai. The owner set network access to Full for new sessions, so **browse both sites with Playwright first** (screenshots, fonts, colours, spacing, motion). Then restyle: tokens at the top of `apps/web/app/globals.css`, layout chrome in `app/layout.tsx`, home hero in `app/page.tsx`.
+## Next
+1. **Redesign (being done in parallel by the Design session, see above)** to feel like https://blink.cash and https://wspr.ai. When it's pushed, merge `claude/design-restyle` per the rules above. The owner set network access to Full for new sessions, so **browse both sites with Playwright first** (screenshots, fonts, colours, spacing, motion). Then restyle: tokens at the top of `apps/web/app/globals.css`, layout chrome in `app/layout.tsx`, home hero in `app/page.tsx`.
 2. Evaluate the **Blink SDK** (blink.cash) for the payment step (ADR-0009), now that the site is reachable.
-3. Owner launch steps (see the runbook once written): X app + first credit purchase ($20 bonus), Neon, escrow wallet + SOL, Vercel, GitHub secrets.
+3. Owner launch steps: `docs/10-launch-runbook.md` (X app + first credit purchase → $20 bonus, wallets, Vercel prod env, GitHub secrets + `WORKER_ENABLED`, $1 smoke test).
+4. Evaluate **Privy** embedded wallets (ADR-0017, proposed): easier wallets for businesses/creators; keep dev login for $0 testing.
 
 ## How to run (zero cost)
 See README → "Run with zero X credits". Short version:
@@ -89,7 +90,11 @@ su postgres -c "/usr/lib/postgresql/16/bin/pg_ctl -D /var/lib/postgresql/adspace
 - Killing the dev server with `pkill -f "next start"` also kills your own shell. Use `ps aux | grep "[n]ext-server"`.
 - Scratchpad dirs can lose permissions, so keep Postgres data under `/var/lib/postgresql`.
 - dHash alone can't tell flat colours apart. That's why signatures include mean RGB.
+- New Vercel Blob stores have **no** `BLOB_READ_WRITE_TOKEN`; they use `BLOB_STORE_ID` + OIDC (works on Vercel only). The GitHub worker needs a read-write token created manually.
+- Node's `fetch` ignores `HTTPS_PROXY` in the cloud sandbox: use `NODE_USE_ENV_PROXY=1` for scripts that call the live site.
+- `drizzle-kit migrate` swallows errors; use `pnpm --filter @adspaces/db migrate` (our script).
 
 ## Open questions for the owner
 - Treasury address (Squads multisig recommended).
+- Privy (ADR-0017): go/no-go after reading its docs; pricing jumps to $299/mo past 499 MAU.
 - Should the "Ad space available" tag include a short URL?

@@ -53,6 +53,17 @@ export class CustodialSolanaPayProvider implements PaymentsProvider {
     return this.escrow.publicKey.toBase58();
   }
 
+  /** Current USDC held by the escrow wallet (micro-USDC). */
+  async escrowBalanceMicro(): Promise<number> {
+    const ata = getAssociatedTokenAddressSync(this.mint, this.escrow.publicKey);
+    try {
+      const { value } = await this.connection.getTokenAccountBalance(ata, "confirmed");
+      return Number(value.amount);
+    } catch {
+      return 0; // token account not created yet
+    }
+  }
+
   async findPayment({ reference, amountMicro }: { reference: string; amountMicro: number }): Promise<FoundPayment | null> {
     const sigs = await this.connection.getSignaturesForAddress(new PublicKey(reference), { limit: 20 }, "finalized");
     // Oldest first: the first valid payment wins.

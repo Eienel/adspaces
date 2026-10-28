@@ -36,6 +36,17 @@ Tick items as they land. Each item should map to code + docs.
 - [ ] Restyle to match blink.cash / wspr.ai (blocked: sites not reachable from the build session; need screenshots or network access)
 - [ ] Notifications when it's someone's turn (accept / pay / upload banner)
 
+## Phase 1c — Launch-ready beta (session 3)
+- [x] Tiered fees 2.5 / 1.5 / 0.75% (ADR-0014)
+- [x] $1,000 beta cap + escrow solvency alert (ADR-0015)
+- [x] Worker `--once` + GitHub Actions schedule, CI workflow (ADR-0016)
+- [x] Production startup guards (web + worker), `/terms` + `/privacy`
+- [x] Vercel staging demo live (dev mode): https://web-6wfa.vercel.app
+- [x] Launch runbook (`docs/10-launch-runbook.md`)
+- [ ] Owner: real launch steps in the runbook (X app + credits, wallets, GitHub secrets, $1 smoke test)
+- [ ] Restyle like blink.cash / wspr.ai (Design session, branch `claude/design-restyle`)
+- [ ] Evaluate Privy embedded wallets (ADR-0017) and Blink SDK (ADR-0009)
+
 ## Phase 2 — Trust & growth
 - [ ] Admin console: creative moderation, dispute resolution
 - [ ] Pro-rata payouts

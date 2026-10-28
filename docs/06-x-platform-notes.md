@@ -11,6 +11,12 @@ Per X Help ("About verified accounts"), only changes to **profile photo, display
 - Pricing: pay-per-use is the default; **User read ≈ $0.010 per resource returned**. https://docs.x.com/x-api/getting-started/pricing
 - OAuth 2.0 (PKCE) login with scopes `users.read tweet.read offline.access`.
 
+## Free credits (checked 2026-10-28)
+- X grants a one-time **$20 credit after the first API credit purchase** (changed 2026-10-13; adding a card alone no longer qualifies). Up to **$50 match** on the first auto-recharge. Credits **expire after 3 months**. Some developers report receiving $5 instead of $20.
+  - https://devcommunity.x.com/t/introducing-free-credit-incentives-for-x-api-pay-per-use-accounts-updated-10-13-26/277172
+  - https://devcommunity.x.com/t/missing-20-free-credits-after-adding-payment-method-and-first-purchase/279023
+- No free tier for new developers. Third-party guides report "owned reads" (your own account, `/2/users/me`) at ~$0.001. **Unverified**; we use them via `BANNER_SOURCE=owned` (ADR-0013).
+
 ## What owners need to do
 1. Create an app at https://developer.x.com, enable OAuth 2.0 (type: Web App), callback `https://<domain>/api/auth/callback/twitter` (and `http://localhost:3000/...` for dev).
 2. Put `AUTH_TWITTER_ID` / `AUTH_TWITTER_SECRET` in `.env`.

@@ -23,5 +23,5 @@ AdSpaces is a trust layer plus marketplace:
 - Escrow plus automated checks removes the counterparty risk that kills DM deals.
 
 ## Business model
-- Platform fee in basis points (bps), taken on-chain at release. Default placeholder **10% (1000 bps)**, configurable in the program config. *Owner to confirm.*
+- Platform fee taken at payout, **tiered by booking size: 2.5% under $100, 1.5% for $100–$499, 0.75% for $500+** (ADR-0014). Listing and browsing are free.
 - Later: featured listings, analytics subscriptions for advertisers.
