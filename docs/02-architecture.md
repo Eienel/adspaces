@@ -14,14 +14,18 @@
             ┌───────┴───────────────────────────────┴───────┐
             │ apps/worker (long-running Node process)        │
             │  - payment watcher  (Solana RPC, Solana Pay ref)│
-            │  - banner verifier  (X API v2 batch lookup)     │
+            │  - weekly cycle     (cutoff + composite banner) │
+            │  - banner verifier  (per-segment signatures)    │
             │  - settlement       (USDC payout / refund)      │
             └───────┬──────────────────────────┬─────────────┘
                     │                          │
               X API v2 (/2/users)        Solana RPC (Helius/Triton/public)
 ```
 
-## Data flow: happy-path booking
+## Weekly flow (ADR-0010)
+Mon–Sat: businesses book slots / creators offer slots → accept → pay. **Sat 12:00 UTC cutoff:** unpaid → cancelled; worker composes one banner per creator. **Mon 00:00 UTC:** creator uploads it to X (24h grace); worker verifies each slot at random times; at the week's end each booking is released or refunded independently.
+
+## Data flow: happy-path booking (single slot)
 1. Advertiser requests a booking → `bookings.status = requested` (creative uploaded, pHash stored).
 2. Seller accepts → `accepted`. The server creates a Solana Pay transfer request with a unique `reference` pubkey and amount.
 3. Advertiser pays in their wallet → the payment watcher finds the tx by `reference`, validates amount/mint/recipient → `funded`.
@@ -38,8 +42,11 @@
 - Stateless web tier → scales horizontally on Vercel with no changes.
 
 ## File storage
-Creatives go to **Vercel Blob** when `BLOB_READ_WRITE_TOKEN` is set (required on Vercel). Otherwise they're written to `UPLOAD_DIR` (default `apps/web/.uploads`) and served by `/api/uploads/[name]`, for local dev and self-hosting.
+Shared by web + worker (`packages/shared/src/storage.ts`). Creatives, base art and composite banners go to **Vercel Blob** when `BLOB_READ_WRITE_TOKEN` is set (required on Vercel). Otherwise they're written to `UPLOAD_DIR` (both apps must point at the same dir) and served by `/api/uploads/[name]`, for local dev and self-hosting.
+
+## Server-only code
+`@adspaces/shared/server` (sharp, node:crypto, fs): compose, signatures, encryption, storage. **Never import it from client components**; `@adspaces/shared` is safe everywhere.
 
 ## Key interfaces (swap points)
-- `BannerSource` (packages/shared): `getBanners(xUserIds) → Map<id, bannerUrl|null>`. Implementations: `XApiBannerSource`, `MockBannerSource`.
-- `PaymentsProvider` (packages/shared): `createPaymentRequest`, `findPayment`, `release`, `refund`. Implementations: `CustodialSolanaPayProvider` (now), `EscrowProgramProvider` (later, see ADR-0006).
+- `BannerSource` (packages/shared): `getBanners(xUserIds) → Map<id, bannerUrl|null>`. Implementations: `XApiBannerSource` (app bearer), `OwnedTokenBannerSource` + `DevBannerSource` (apps/worker), `MockBannerSource` (tests).
+- `PaymentsProvider` (packages/shared): `createPaymentRequest`, `findPayment`, `release`, `refund`. Implementations: `CustodialSolanaPayProvider` (now), `DevPaymentsProvider` ($0 dev mode), `EscrowProgramProvider` (later, see ADR-0006).

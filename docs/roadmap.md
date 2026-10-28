@@ -25,6 +25,17 @@ Tick items as they land. Each item should map to code + docs.
 - [ ] Deploy: Vercel (web) + Railway/Fly (worker) + Neon + Upstash
 - [ ] Owner: X developer app, API credits, treasury Squads multisig, decide fee %
 
+## Phase 1b — Segments & businesses (session 2)
+- [x] Segment layouts + per-segment pricing within the cap (ADR-0010)
+- [x] Weekly cycles, cutoff, composite banner job
+- [x] Per-segment verification (region signatures)
+- [x] Business portal, ad board, creator offers, two-way accept (ADR-0011)
+- [x] Wallet sign-in for businesses (ADR-0012)
+- [x] $0 dev mode: dev login, simulated payments/banners, `run-at` clock helper (ADR-0013)
+- [x] Owned-token banner source with encrypted refresh tokens (ADR-0013), untested against real X
+- [ ] Restyle to match blink.cash / wspr.ai (blocked: sites not reachable from the build session; need screenshots or network access)
+- [ ] Notifications when it's someone's turn (accept / pay / upload banner)
+
 ## Phase 2 — Trust & growth
 - [ ] Admin console: creative moderation, dispute resolution
 - [ ] Pro-rata payouts

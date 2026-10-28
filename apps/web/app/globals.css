@@ -1,12 +1,23 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens. The whole look lives here (colours, radii, fonts) so a restyle
+ * (e.g. matching a reference site) only touches this block + layout chrome.
+ */
 :root {
   --bg: #0b0d12;
   --panel: #131722;
+  --panel-2: #1a1f2d;
   --border: #232838;
   --text: #e8eaf0;
   --muted: #8b93a7;
   --accent: #7c5cff;
+  --accent-2: #22d3ee;
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --radius: 1rem;
+  --radius-sm: 0.75rem;
 }
 
 body {
@@ -15,10 +26,12 @@ body {
 }
 
 @layer components {
-  .panel { @apply rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5; }
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50; }
-  .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-semibold transition hover:bg-white/5 disabled:opacity-50; }
-  .input { @apply w-full rounded-xl border border-[var(--border)] bg-black/30 px-3 py-2 text-sm outline-none focus:border-[var(--accent)]; }
+  .panel { @apply border border-[var(--border)] bg-[var(--panel)] p-5; border-radius: var(--radius); }
+  .btn { @apply inline-flex items-center justify-center gap-2 bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50; border-radius: var(--radius-sm); }
+  .btn-ghost { @apply inline-flex items-center justify-center gap-2 border border-[var(--border)] px-4 py-2 text-sm font-semibold transition hover:bg-white/5 disabled:opacity-50; border-radius: var(--radius-sm); }
+  .input { @apply w-full border border-[var(--border)] bg-black/30 px-3 py-2 text-sm outline-none focus:border-[var(--accent)]; border-radius: var(--radius-sm); }
   .label { @apply mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--muted)]; }
   .muted { @apply text-[var(--muted)]; }
+  .chip { @apply rounded-full border border-[var(--border)] px-3 py-1 text-xs; }
+  .chip-on { @apply border-[var(--accent)] text-white; }
 }

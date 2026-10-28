@@ -8,7 +8,8 @@
 The owner would like a ready-made payment platform if a good one exists, e.g. **blink.cash**.
 
 ## Findings so far
-- **blink.cash:** not evaluated yet. The build session's network policy blocked the domain and web search returned nothing about it. **TODO:** allow the domain or share its docs, then check: Solana + USDC support? Escrow/hold-and-release? Payout API? Fees? Custody model? KYC?
+- **blink.cash (update 2026-10-28):** a public ETHGlobal NY 2026 prize listing (https://ethglobal.com/events/newyork2026/prizes/blink) describes it as an SDK for **one-step stablecoin deposits pulled directly from the user's wallet** (no deposit address), integrable alongside Privy/Dynamic embedded wallets. Fits our "business pays for a booking" step. **Open:** Solana support (it was listed at an Ethereum hackathon), payouts/refunds, fees. The owner-provided guide URL 404s. Still not evaluated first-hand.
+- **blink.cash (original note):** not evaluated yet. The build session's network policy blocked the domain and web search returned nothing about it. **TODO:** allow the domain or share its docs, then check: Solana + USDC support? Escrow/hold-and-release? Payout API? Fees? Custody model? KYC?
 - **Solana Actions / Blinks** (https://solana.com/solutions/actions): an open standard. Our API returns a transaction; wallets render it as a "blink" that unfurls in X posts. Very good fit for an X-native product: a seller or advertiser could share "Pay for this booking" as a link on X. No third party is needed; it works on top of the current custodial flow (same `reference` key detection).
 
 ## Decision (for now)

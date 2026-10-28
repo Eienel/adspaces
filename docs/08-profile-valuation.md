@@ -17,7 +17,7 @@ Inputs (`ProfileSignals`), all available via the X API v2 or our own data:
 Steps:
 1. **Estimated daily profile visits** = `max(followers × 0.002, avgImpressions × 0.01)`, then × 1.1 if verified, × (0.75 to 1.5) by engagement quality. (Starting heuristics; tune with real data.)
 2. **Max price/day** = `visits/1000 × MAX_CPM_USDC` (default $25 CPM), floored at a $1/day minimum and rounded to cents.
-3. A listing's `price_per_day_usdc` must be ≤ `max_price_per_day_usdc`, which is stored on the user and recomputed on profile sync.
+3. With segmented banners (ADR-0010), the **sum of all segment prices** must be ≤ `max_price_per_day_usdc` (stored on the user, recomputed on profile sync). The editor shows a cap meter.
 
 All constants live in `VALUATION_DEFAULTS` so they can be tuned in one place.
 

@@ -35,7 +35,10 @@ export function route<A extends unknown[]>(fn: (...args: A) => Promise<Response>
     } catch (err) {
       if (err instanceof HttpError) return Response.json({ error: err.message }, { status: err.status });
       if (err && typeof err === "object" && "issues" in err) {
-        return Response.json({ error: "Invalid input", issues: (err as { issues: unknown }).issues }, { status: 400 });
+        const issues = (err as { issues: { message: string; path: PropertyKey[] }[] }).issues;
+        const first = issues[0];
+        const error = first ? `${first.path.length ? `${first.path.join(".")}: ` : ""}${first.message}` : "Invalid input";
+        return Response.json({ error, issues }, { status: 400 });
       }
       console.error(err);
       return Response.json({ error: "Internal error" }, { status: 500 });

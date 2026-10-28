@@ -9,7 +9,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "lint": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "setup-escrow": "tsx --env-file-if-exists=../../.env src/scripts/setup-escrow.ts"
+    "setup-escrow": "tsx --env-file-if-exists=../../.env src/scripts/setup-escrow.ts",
+    "run-at": "tsx --env-file-if-exists=../../.env src/scripts/run-at.ts"
   },
   "dependencies": {
     "@adspaces/db": "workspace:*",

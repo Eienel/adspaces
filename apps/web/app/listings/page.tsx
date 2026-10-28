@@ -1,4 +1,4 @@
-import { CATEGORIES, listingQuerySchema } from "@adspaces/shared";
+import { CATEGORIES, SEGMENT_SHAPES, SHAPE_LABEL, listingQuerySchema } from "@adspaces/shared";
 import Link from "next/link";
 import { ListingCard } from "@/components/listing-card";
 import { searchListings } from "@/lib/listings";
@@ -7,26 +7,37 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 
 export default async function Browse({ searchParams }: Props) {
   const sp = await searchParams;
-  const flat = Object.fromEntries(Object.entries(sp).filter(([, v]) => typeof v === "string" && v !== ""));
+  const flat = Object.fromEntries(Object.entries(sp).filter(([, v]) => typeof v === "string" && v !== "")) as Record<string, string>;
   const parsed = listingQuerySchema.safeParse(flat);
   const q = parsed.success ? parsed.data : listingQuerySchema.parse({});
   const { items, hasMore } = await searchListings(q);
-  const pageHref = (page: number) => `/listings?${new URLSearchParams({ ...(flat as Record<string, string>), page: String(page) })}`;
+  const pageHref = (page: number) => `/listings?${new URLSearchParams({ ...flat, page: String(page) })}`;
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Browse banners</h1>
-      <form className="panel grid gap-3 sm:grid-cols-5" method="get">
+      <form className="panel grid gap-3 sm:grid-cols-6" method="get">
         <div className="sm:col-span-2">
           <label className="label">Search</label>
           <input name="q" defaultValue={q.q} placeholder="handle, name or title" className="input" />
         </div>
         <div>
-          <label className="label">Category</label>
+          <label className="label">Audience</label>
           <select name="category" defaultValue={q.category ?? ""} className="input">
             <option value="">Any</option>
             {CATEGORIES.map((c) => (
               <option key={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="label">Slot size</label>
+          <select name="shape" defaultValue={q.shape ?? ""} className="input">
+            <option value="">Any</option>
+            {SEGMENT_SHAPES.map((s) => (
+              <option key={s} value={s}>
+                {SHAPE_LABEL[s]}
+              </option>
             ))}
           </select>
         </div>
@@ -43,7 +54,7 @@ export default async function Browse({ searchParams }: Props) {
             <option value="followers_desc">Followers</option>
           </select>
         </div>
-        <div className="sm:col-span-5 flex justify-end">
+        <div className="flex justify-end sm:col-span-6">
           <button className="btn">Apply</button>
         </div>
       </form>

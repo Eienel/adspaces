@@ -35,6 +35,26 @@ pnpm --filter @adspaces/web dev
 pnpm --filter @adspaces/worker dev
 ```
 
+## Run with zero X credits (dev mode)
+No X API keys, wallets or money needed. Fake X logins, simulated payments and banners.
+```bash
+cp .env.example .env   # set DATABASE_URL, AUTH_SECRET; keep DEV_LOGIN=1, BANNER_SOURCE=dev, PAYMENTS_PROVIDER=dev
+```
+```bash
+pnpm --filter @adspaces/db migrate
+```
+```bash
+pnpm --filter @adspaces/web dev
+```
+Open http://localhost:3000/signin and use **Dev login** as a creator (e.g. `alice`). Then, in another browser profile, sign in as a business with a wallet, or with another dev handle. List a banner, book a slot, accept, press **Dev: simulate payment**. Then fast-forward the week with the pretend-clock helper:
+```bash
+pnpm --filter @adspaces/worker run-at 2026-11-07T13:00:00Z   # Saturday after cutoff: builds the combined banner
+```
+```bash
+pnpm --filter @adspaces/worker run-at 2026-11-09T00:30:00Z   # Monday: verifies each slot (after "Dev: simulate I uploaded it")
+```
+Use dates matching your booking's week. Run the real worker loop with `pnpm --filter @adspaces/worker dev`.
+
 ## Tests
 ```bash
 pnpm typecheck && pnpm test

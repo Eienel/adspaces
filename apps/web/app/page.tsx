@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { BannerPreview } from "@/components/banner-preview";
+import { CampaignCard } from "@/components/campaign-card";
 import { ListingCard } from "@/components/listing-card";
+import { listOpenCampaigns } from "@/lib/campaigns";
 import { searchListings } from "@/lib/listings";
 
 // Static + revalidated: served from the CDN under heavy traffic.
@@ -7,40 +10,51 @@ export const revalidate = 60;
 
 async function latest() {
   try {
-    return (await searchListings({ sort: "newest", page: 1 })).items.slice(0, 6);
+    const [l, c] = await Promise.all([searchListings({ sort: "newest", page: 1 }), listOpenCampaigns({ page: 1 })]);
+    return { listings: l.items.slice(0, 6), campaigns: c.items.slice(0, 3) };
   } catch (err) {
-    console.warn("home: listings unavailable", String(err));
-    return [];
+    console.warn("home: data unavailable", String(err));
+    return { listings: [], campaigns: [] };
   }
 }
 
 export default async function Home() {
-  const items = await latest();
+  const { listings, campaigns } = await latest();
   return (
-    <div className="space-y-14">
-      <section className="space-y-5 pt-6 text-center">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
-          Your X banner is <span className="text-[var(--accent)]">ad space</span>.
-        </h1>
-        <p className="mx-auto max-w-2xl text-lg muted">
-          Rent your profile banner to advertisers. Payment is held in USDC escrow and released automatically once we
-          verify your banner stayed up. Changing your banner does not affect your blue checkmark.
-        </p>
-        <div className="flex justify-center gap-3">
-          <Link href="/dashboard" className="btn">
-            List my banner
-          </Link>
-          <Link href="/listings" className="btn-ghost">
-            Browse banners
-          </Link>
+    <div className="space-y-16">
+      <section className="grid items-center gap-10 pt-6 lg:grid-cols-2">
+        <div className="space-y-5">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
+            Your X banner is <span className="text-[var(--accent)]">ad space</span>.
+          </h1>
+          <p className="text-lg muted">
+            Split your banner into ad slots and rent them to businesses, one ad or three at a time. Payment waits in USDC escrow and is
+            released when we&apos;ve verified your banner stayed up. Changing your banner doesn&apos;t affect your blue checkmark.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/dashboard" className="btn">
+              I&apos;m a creator
+            </Link>
+            <Link href="/business" className="btn-ghost">
+              I&apos;m a business
+            </Link>
+          </div>
         </div>
+        <BannerPreview
+          imageUrl={null}
+          segments={[
+            { idx: 0, x: 0, y: 0, w: 1000, h: 500, label: "Your ad here", sublabel: "$18/day", state: "selected" },
+            { idx: 1, x: 1000, y: 0, w: 500, h: 500, label: "Slot 2", sublabel: "$9/day" },
+          ]}
+        />
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-4">
         {[
-          ["1. List", "Sign in with X, link a Solana wallet and set your daily price."],
-          ["2. Get booked", "Advertisers upload a 1500×500 creative and pay into escrow in USDC."],
-          ["3. Get paid", "Set the banner. We check it at random times and release payment at the end."],
+          ["1. Connect X", "See your real banner and choose how many ad slots it has."],
+          ["2. Get booked", "Businesses book slots, or you offer slots to ads on the board."],
+          ["3. Weekly banner", "Every Monday we build one combined banner for you to upload."],
+          ["4. Get paid", "We check it at random times and release USDC when the week ends."],
         ].map(([t, d]) => (
           <div key={t} className="panel">
             <div className="font-semibold">{t}</div>
@@ -56,14 +70,32 @@ export default async function Home() {
             See all →
           </Link>
         </div>
-        {items.length ? (
+        {listings.length ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((l) => (
+            {listings.map((l) => (
               <ListingCard key={l.id} l={l} />
             ))}
           </div>
         ) : (
-          <div className="panel text-center muted">No listings yet. Be the first.</div>
+          <div className="panel text-center muted">No banners listed yet. Be the first.</div>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Open ads looking for banners</h2>
+          <Link href="/ads" className="text-sm text-[var(--accent)]">
+            Ad board →
+          </Link>
+        </div>
+        {campaigns.length ? (
+          <div className="grid gap-4 sm:grid-cols-3">
+            {campaigns.map((c) => (
+              <CampaignCard key={c.id} c={c} />
+            ))}
+          </div>
+        ) : (
+          <div className="panel text-center muted">No open ads yet.</div>
         )}
       </section>
     </div>

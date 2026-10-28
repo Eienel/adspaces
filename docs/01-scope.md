@@ -12,6 +12,11 @@
 - Profile valuation: estimated daily views → max price/day cap on listings (08-profile-valuation.md).
 - Basic dashboard for sellers (incoming requests, earnings) and advertisers (bookings, verification history).
 
+- **Segmented banners** (1–3 ads per banner, creator picks layout), weekly cycles, composite banner generation, per-segment verification (ADR-0010).
+- **Business portal + ad board**: businesses post ads; creators offer slots; businesses book slots (ADR-0011).
+- **Wallet sign-in** for businesses (ADR-0012).
+- **$0 dev mode** + cheap X API strategy (ADR-0013).
+
 ## Phase 2
 - Disputes UI + admin console (creative moderation, manual resolve).
 - Pro-rata / streaming payouts (pay per verified day).

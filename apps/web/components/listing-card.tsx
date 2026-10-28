@@ -1,15 +1,18 @@
+import { layoutSegments } from "@adspaces/shared";
 import Link from "next/link";
+import { BannerPreview } from "@/components/banner-preview";
 import { compact, usd } from "@/lib/format";
-import type { searchListings } from "@/lib/listings";
+import type { ListingCardData } from "@/lib/listings";
 
-type Item = Awaited<ReturnType<typeof searchListings>>["items"][number];
-
-export function ListingCard({ l }: { l: Item }) {
+export function ListingCard({ l }: { l: ListingCardData }) {
+  const segs = layoutSegments(l.layout);
   return (
     <Link href={`/listings/${l.id}`} className="panel block overflow-hidden p-0 transition hover:border-[var(--accent)]">
-      <div className="aspect-[3/1] bg-gradient-to-r from-[#1d2033] to-[#2a2050]">
-        {l.seller.bannerUrl && <img src={`${l.seller.bannerUrl}/600x200`} alt="" className="h-full w-full object-cover" />}
-      </div>
+      <BannerPreview
+        className="rounded-none"
+        imageUrl={l.originalBannerUrl ?? l.seller.bannerUrl}
+        segments={segs.length > 1 ? segs.map((s) => ({ idx: s.idx, ...s.rect, state: "dim" as const })) : []}
+      />
       <div className="space-y-2 p-4">
         <div className="flex items-center gap-2">
           {l.seller.avatarUrl && <img src={l.seller.avatarUrl} alt="" className="h-8 w-8 rounded-full" />}
@@ -24,9 +27,11 @@ export function ListingCard({ l }: { l: Item }) {
         <div className="flex items-end justify-between">
           <div className="text-xs muted">
             {compact(l.seller.followersCount)} followers · ~{compact(l.seller.estDailyViews)} views/day
+            <br />
+            {segs.length} ad {segs.length === 1 ? "slot" : "slots"}
           </div>
           <div className="text-right">
-            <div className="font-bold">{usd(l.pricePerDayUsdc)}</div>
+            <div className="font-bold">from {usd(l.minPricePerDayUsdc)}</div>
             <div className="text-xs muted">per day</div>
           </div>
         </div>
