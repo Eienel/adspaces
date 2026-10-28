@@ -7,3 +7,4 @@ export * from "./schemas";
 export * from "./solana-pay";
 export * from "./wallet-link";
 export * from "./interfaces";
+export * from "./x-api";
