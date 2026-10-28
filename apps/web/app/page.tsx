@@ -19,91 +19,126 @@ async function latest() {
   }
 }
 
-// Hero notes, like blink's floating chips: [text, position, colours, tilt, arrival delay].
-const STICKERS = [
-  ["Your ad here · $18/day", "top-[14%] left-[5%]", "bg-[var(--lime)] text-[var(--dark)]", "-6deg", "650ms"],
-  ["Verified ✓", "top-[8%] right-[14%]", "bg-[var(--pink)] text-[var(--dark)]", "-3deg", "720ms"],
-  ["Slot 2 · $9/day", "top-[30%] right-[4%]", "bg-white text-[var(--dark)]", "5deg", "790ms"],
-  ["Paid in USDC", "top-[52%] left-[3%]", "bg-[var(--dark)] text-white", "4deg", "860ms"],
+type Vars = React.CSSProperties & Record<`--${string}`, string | number>;
+
+// Price tags hung on the banner proof: [text, position, colours, tilt, arrival delay].
+const TAGS = [
+  ["$18/day", "-top-5 left-[18%]", "bg-[var(--lime)] text-[var(--dark)]", "-7deg", "1350ms"],
+  ["$9/day", "-bottom-5 right-[8%]", "bg-white text-[var(--dark)]", "6deg", "1450ms"],
 ] as const;
 
+const TAPE = ["Ad space available", "Paid in USDC escrow", "One ad or three", "Your blue check stays"];
+
 const STEPS = [
-  ["1. Connect X", "See your real banner and choose how many ad slots it has.", "bg-[var(--lavender)]", "-rotate-2"],
-  ["2. Get booked", "Businesses book slots, or you offer slots to ads on the board.", "bg-[var(--mint)]", "rotate-1"],
-  ["3. Weekly banner", "Every Monday we build one combined banner for you to upload.", "bg-[var(--peach)]", "-rotate-1"],
-  ["4. Get paid", "We check it at random times and release USDC when the week ends.", "bg-[var(--lime)]", "rotate-2"],
+  ["Connect X", "See your real banner and choose how many ad slots it has.", "var(--lavender)"],
+  ["Get booked", "Businesses book slots, or you offer slots to ads on the board.", "var(--mint)"],
+  ["Weekly banner", "Every Monday we build one combined banner for you to upload.", "var(--peach)"],
+  ["Get paid", "We check it at random times and release USDC when the week ends.", "var(--lime)"],
 ] as const;
 
 export default async function Home() {
   const { listings, campaigns } = await latest();
   return (
     <div className="space-y-20 sm:space-y-28">
-      {/* Hero: blink's sky gradient + glass card + floating stickers, wispr's serif headline. */}
-      <section className="band-sky relative -mt-4 overflow-hidden rounded-[2.5rem] px-4 pt-16 pb-10 sm:rounded-[3.5rem] sm:px-10 sm:pt-24 sm:pb-14">
-        <div aria-hidden className="pointer-events-none absolute inset-0 hidden lg:block">
-          {STICKERS.map(([text, pos, look, tilt, delay]) => (
-            <span key={text} className={`drift absolute ${pos}`}>
-              <span className={`sticker sticker-in block ${look}`} style={{ "--tilt": tilt, "--d": delay } as React.CSSProperties}>
+      {/* Hero. Signature: "ad space" is an empty slot in the headline that fills with lime and gets stamped. */}
+      <section className="grid items-center gap-14 pt-4 sm:pt-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
+        <div>
+          <h1 className="display lines">
+            <span className="line">
+              <span data-line>Your X banner</span>
+            </span>
+            <span className="line pt-[0.12em]">
+              <span data-line style={{ "--i": 1 } as Vars}>
+                is{" "}
+                <span className="slot-word">
+                  <em>ad space</em>
+                </span>
+                .
+                <span data-stamp aria-hidden className="stamp ml-[0.35em] -translate-y-[0.35em] align-middle font-[family-name:var(--font-sans)] text-[11px] leading-none text-[var(--green)] sm:px-3 sm:py-1.5 sm:text-[17px]">
+                  Booked
+                </span>
+              </span>
+            </span>
+          </h1>
+          <p data-load className="mt-7 max-w-xl text-base font-medium muted sm:text-lg" style={{ "--d": "450ms" } as Vars}>
+            Split your banner into ad slots and rent them to businesses, one ad or three at a time. Payment waits in USDC escrow and is
+            released when we&apos;ve verified your banner stayed up. Changing your banner doesn&apos;t affect your blue checkmark.
+          </p>
+          <div data-load className="mt-8 flex flex-wrap gap-3" style={{ "--d": "550ms" } as Vars}>
+            <Link href="/dashboard" className="btn btn-lg">
+              I&apos;m a creator
+            </Link>
+            <Link href="/business" className="btn-ghost btn-lg">
+              I&apos;m a business
+            </Link>
+          </div>
+        </div>
+
+        {/* The banner as a print proof: flat poster blue, crop marks, price tags hung on its slots. */}
+        <div data-load className="relative mx-3 rotate-[1.5deg] sm:mx-6" style={{ "--d": "300ms" } as Vars}>
+          <div className="crop rounded-[var(--radius-lg)] bg-[var(--sky)] p-4 text-[var(--dark)] shadow-[var(--shadow-card)] sm:p-6">
+            <BannerPreview
+              imageUrl={null}
+              segments={[
+                { idx: 0, x: 0, y: 0, w: 1000, h: 500, label: "Your ad here", sublabel: "Slot 1", state: "selected" },
+                { idx: 1, x: 1000, y: 0, w: 500, h: 500, label: "Slot 2" },
+              ]}
+            />
+            <div className="mt-3 flex justify-between text-[11px] font-semibold tracking-[0.12em] uppercase sm:text-xs">
+              <span>1500 × 500</span>
+              <span>2 slots</span>
+            </div>
+          </div>
+          {TAGS.map(([text, pos, look, tilt, d]) => (
+            <span key={text} aria-hidden className={`drift absolute ${pos}`}>
+              <span className={`tag deal ${look}`} style={{ "--tilt": tilt, "--d": d } as Vars}>
                 {text}
               </span>
             </span>
           ))}
         </div>
-        <div className="panel-glass relative mx-auto max-w-4xl px-5 py-10 text-center sm:px-12 sm:py-14">
-          <h1 className="display lines text-white">
-            <span className="line">
-              <span data-line>Your X banner is</span>
-            </span>
-            <span className="line">
-              <span data-line style={{ "--i": 1 } as React.CSSProperties}>
-                <em>ad space</em>.
-              </span>
-            </span>
-          </h1>
-          <p data-load className="mx-auto mt-6 max-w-2xl text-base font-medium text-white/90 sm:text-xl" style={{ "--d": "420ms" } as React.CSSProperties}>
-            Split your banner into ad slots and rent them to businesses, one ad or three at a time. Payment waits in USDC escrow and is
-            released when we&apos;ve verified your banner stayed up. Changing your banner doesn&apos;t affect your blue checkmark.
-          </p>
-          <div data-load className="mt-8 flex flex-wrap justify-center gap-3" style={{ "--d": "500ms" } as React.CSSProperties}>
-            <Link href="/dashboard" className="btn-white btn-lg">
-              I&apos;m a creator
-            </Link>
-            <Link href="/business" className="btn btn-lg">
-              I&apos;m a business
-            </Link>
-          </div>
-        </div>
-        <div data-open className="relative mx-auto mt-8 max-w-3xl sm:mt-10">
-          <BannerPreview
-            className="ring-4 ring-white/40"
-            imageUrl={null}
-            segments={[
-              { idx: 0, x: 0, y: 0, w: 1000, h: 500, label: "Your ad here", sublabel: "$18/day", state: "selected" },
-              { idx: 1, x: 1000, y: 0, w: 500, h: 500, label: "Slot 2", sublabel: "$9/day" },
-            ]}
-          />
-        </div>
       </section>
 
-      {/* How it works: wispr's dark band with tilted colour cards. */}
+      {/* One tape per page, like the "Ad space available" tag on unsold slots. */}
+      <div className="tape" aria-hidden>
+        <div className="tape-band">
+        <div className="tape-track">
+          {[0, 1].map((k) => (
+            <span key={k} className="flex gap-8 pr-8">
+              {TAPE.map((t) => (
+                <span key={t} className="flex items-center gap-8">
+                  {t} <span className="text-[var(--green)]">✦</span>
+                </span>
+              ))}
+            </span>
+          ))}
+        </div>
+        </div>
+      </div>
+
+      {/* How it works: the four steps are one banner split into four slots that get booked as you scroll. */}
       <section className="band band-dark band-round">
         <div className="mx-auto max-w-6xl">
-          <div className="eyebrow text-center text-[var(--on-dark-muted)]">How it works</div>
-          <h2 className="section-title mt-4 text-center">
-            Four steps, <em>every week</em>.
+          <div className="eyebrow text-[var(--on-dark-muted)]">How it works</div>
+          <h2 className="section-title mt-4 max-w-3xl">
+            Four slots, <em>one week</em>.
           </h2>
-          <div className="reveal mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map(([t, d, bg, tilt], i) => (
-              <div key={t} style={{ "--i": i } as React.CSSProperties} className={`${bg} ${tilt} rounded-[var(--radius-lg)] p-6 text-[var(--dark)] transition-[rotate] duration-[var(--t-ui)] hover:rotate-0 sm:min-h-56`}>
-                <div className="font-[family-name:var(--font-serif)] text-3xl tracking-tight">{t}</div>
-                <div className="mt-3 text-[15px] font-medium text-black/75">{d}</div>
+          <div className="strip mt-12">
+            {STEPS.map(([t, d, fill], i) => (
+              <div key={t} style={{ "--i": i, "--fill": fill } as Vars}>
+                <span aria-hidden className="strip-fill" />
+                <div className="strip-ink relative">
+                  <div className="text-[11px] font-semibold tracking-[0.14em] uppercase opacity-70">Slot {i + 1}</div>
+                  <div className="mt-6 font-[family-name:var(--font-serif)] text-4xl tracking-tight sm:mt-10">{t}</div>
+                  <div className="mt-3 text-[15px] font-medium opacity-80">{d}</div>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="space-y-8">
+      <section className="space-y-10">
         <div className="text-center">
           <h2 className="section-title">
             Simple <em>fees</em>
@@ -127,7 +162,7 @@ export default async function Home() {
             ))}
           </div>
         ) : (
-          <div className="panel-sand text-center muted">No banners listed yet. Be the first.</div>
+          <div className="slot-empty">No banners listed yet. Be the first.</div>
         )}
       </section>
 
@@ -148,7 +183,7 @@ export default async function Home() {
               ))}
             </div>
           ) : (
-            <div className="rounded-[var(--radius-xl)] bg-white/10 p-6 text-center text-[var(--on-dark-muted)]">No open ads yet.</div>
+            <div className="slot-empty border-[var(--on-dark)]/30 text-[var(--on-dark-muted)]">No open ads yet.</div>
           )}
         </div>
       </section>

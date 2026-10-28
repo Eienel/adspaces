@@ -2,8 +2,9 @@
 
 /*
  * Design tokens. The whole look lives here (colours, radii, fonts, motion) so a restyle only touches
- * this block + layout chrome. It blends wisprflow.ai (cream paper, serif display, rounded colour bands,
- * bordered nav) with blink.cash (sky-blue glass hero, black pills, lime highlights, floating stickers).
+ * this block + layout chrome. Concept: "the layout sheet": every page is paper waiting for ads; slots
+ * are dashed frames with printer's crop marks, prices hang on punched tags, booked things get stamped.
+ * Materials come from wisprflow.ai (paper, serif, bands) and blink.cash (pop colour, pills, play).
  * Measurements and the reasoning: docs/11-design-system.md.
  */
 @font-face {
@@ -44,10 +45,11 @@
   --dark: #1a1a1a;
   --dark-2: #26262a;
   --green: #034f46; /* wispr band */
-  /* sky (blink) */
-  --sky-top: #56a4ff;
-  --sky-bottom: #64ddff;
-  --glass: rgb(255 255 255 / 0.15);
+  /* poster blue (blink's sky, used flat, as a print colour) */
+  --sky: #5cb2ff;
+  /* layout-paper dot grid */
+  --grid-dot: rgb(26 26 26 / 0.09);
+  --grid-size: 22px;
   /* brand + card colours */
   --accent: #034f46; /* links, selected borders, progress (wispr green); primary buttons are ink */
   --accent-2: #1d9bf0; /* verified tick */
@@ -71,7 +73,6 @@
   /* depth */
   --shadow-card: 0 30px 70px -48px rgb(26 26 26 / 0.45);
   --shadow-pop: 0 12px 28px -12px rgb(0 0 0 / 0.4);
-  --shadow-glass: 0 3px 18px rgb(0 0 0 / 0.08), inset 0 1.5px 3px rgb(255 255 255 / 0.4);
   --blur: 22px;
   /* type */
   --font-sans: "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
@@ -94,7 +95,9 @@
     background: var(--bg);
   }
   body {
-    background: var(--bg);
+    background-color: var(--bg);
+    background-image: radial-gradient(var(--grid-dot) 1px, transparent 1.3px);
+    background-size: var(--grid-size) var(--grid-size);
     color: var(--text);
     font-family: var(--font-sans);
     font-weight: 450;
@@ -135,12 +138,10 @@
   /* Section titles inside panels stay sans: they are UI labels, not headlines. */
   .panel h2, .panel-sand h2 { font-family: var(--font-sans); font-weight: 650 !important; letter-spacing: -0.01em; }
   .panel-sand { @apply bg-[var(--sand)] p-6; border-radius: var(--radius-xl); }
-  .panel-glass { @apply p-6 text-white; background: var(--glass); backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur)); border-radius: var(--radius-xl); box-shadow: var(--shadow-glass); }
   .panel-dark { @apply p-6 text-[var(--on-dark)]; background: linear-gradient(to bottom, var(--dark-2), #0c0c0d); border-radius: var(--radius-xl); }
 
   /* colour bands (full-bleed sections with big rounded corners) */
   .band { @apply relative left-1/2 w-screen -translate-x-1/2 px-4 py-16 sm:py-24; }
-  .band-sky { background: linear-gradient(var(--sky-top) 17%, var(--sky-bottom) 102%); }
   .band-green { @apply text-[var(--on-dark)]; background: var(--green); }
   .band-dark { @apply text-[var(--on-dark)]; background: var(--dark); }
   .band-round { border-radius: 2.5rem; }
@@ -180,37 +181,80 @@
   .eyebrow { @apply text-xs font-medium tracking-[0.12em] uppercase; }
   .link { @apply font-semibold underline decoration-current/30 underline-offset-4 transition hover:decoration-current; }
 
-  /* nav (wispr's bordered box + segmented tabs, with blink's glass blur) */
+  /* nav: a bordered paper box with segmented tabs, frosted so the page scrolls under it */
   .nav-box { @apply border-2 border-[var(--border)]; background: rgb(255 255 235 / 0.82); backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur)); border-radius: var(--radius-sm); }
   .nav-tabs { @apply inline-flex items-center gap-0.5 rounded-full bg-[var(--sand)] p-0.5; }
   .nav-tab { @apply rounded-full px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-[var(--text)] transition hover:bg-white/50; }
   .nav-tab-on { @apply bg-[var(--panel)] hover:bg-[var(--panel)]; }
 
-  /* stickers (blink's floating note chips) */
-  .sticker { @apply rounded-[14px] px-3.5 py-2 text-sm font-semibold whitespace-nowrap; box-shadow: var(--shadow-pop); }
+  /*
+   * Concept pieces.
+   * .crop: printer's crop marks just outside an element's four corners (one ::before, 8 hairlines).
+   */
+  .crop { position: relative; }
+  .crop::before {
+    content: ""; position: absolute; inset: -12px; pointer-events: none; --m: 9px; --w: 1.5px; --c: currentColor;
+    background:
+      linear-gradient(var(--c), var(--c)) top left / var(--m) var(--w), linear-gradient(var(--c), var(--c)) top left / var(--w) var(--m),
+      linear-gradient(var(--c), var(--c)) top right / var(--m) var(--w), linear-gradient(var(--c), var(--c)) top right / var(--w) var(--m),
+      linear-gradient(var(--c), var(--c)) bottom left / var(--m) var(--w), linear-gradient(var(--c), var(--c)) bottom left / var(--w) var(--m),
+      linear-gradient(var(--c), var(--c)) bottom right / var(--m) var(--w), linear-gradient(var(--c), var(--c)) bottom right / var(--w) var(--m);
+    background-repeat: no-repeat;
+  }
+  /* An ad slot set inline in a headline: dashed while empty, lime once booked (see motion below). */
+  .slot-word { @apply relative inline-block px-[0.18em]; border: 0.045em dashed currentColor; border-radius: 0.12em; line-height: 0.92; isolation: isolate; }
+  .slot-word::after { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--lime); border-radius: inherit; }
+  /* Rubber stamp: ink outline type, slightly rotated, multiplied onto the paper. */
+  .stamp { @apply inline-block border-[2.5px] px-2 py-0.5 text-[13px] font-extrabold tracking-[0.14em] uppercase; border-color: currentColor; border-radius: 6px; rotate: -8deg; mix-blend-mode: multiply; }
+  /* Hang tag: pointed end + punched hole (mask), for prices. */
+  .tag { @apply relative inline-flex items-center py-1.5 pr-3.5 pl-6 text-sm font-semibold whitespace-nowrap; clip-path: polygon(12px 0, 100% 0, 100% 100%, 12px 100%, 0 50%); -webkit-mask: radial-gradient(circle 3.5px at 12px 50%, transparent 97%, #000 100%); mask: radial-gradient(circle 3.5px at 12px 50%, transparent 97%, #000 100%); border-radius: 0 6px 6px 0; filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.18)); }
+  /* Vertical hang tag (fee tiers): pointed top with the punched hole. */
+  .tag-v { @apply relative px-6 pt-12 pb-7 text-center; clip-path: polygon(50% 0, 100% 18%, 100% 100%, 0 100%, 0 18%); -webkit-mask: radial-gradient(circle 6px at 50% 22px, transparent 97%, #000 100%); mask: radial-gradient(circle 6px at 50% 22px, transparent 97%, #000 100%); border-radius: 0 0 var(--radius) var(--radius); }
+  /* Empty states read as unsold space: a dashed slot. */
+  .slot-empty { @apply border-2 border-dashed border-[var(--border-strong)] p-8 text-center text-[var(--muted)]; border-radius: var(--radius); }
+  /* "Ad space available" tape across the page (one per page). */
+  .tape { @apply relative left-1/2 w-screen -translate-x-1/2 overflow-hidden py-6; }
+  .tape-band { @apply -mx-[5%] overflow-hidden border-y-2 border-[var(--dark)] bg-[var(--lime)] py-3 text-[var(--dark)]; rotate: -2deg; }
+  .tape-track { @apply flex w-max gap-8 text-lg font-extrabold tracking-[0.08em] whitespace-nowrap uppercase sm:text-xl; }
+  /* The four steps as one banner split into four slots. */
+  .strip { @apply grid overflow-hidden border-2 border-dashed border-[var(--on-dark)]/50 sm:grid-cols-2 lg:grid-cols-4; border-radius: var(--radius-lg); }
+  .strip > * { @apply relative border-dashed border-[var(--on-dark)]/40 p-6 sm:min-h-64 sm:p-7; }
+  .strip > * + * { @apply border-t-2 sm:border-t-0 sm:border-l-2; }
+  @media (min-width: 640px) and (max-width: 1023px) { .strip > :nth-child(3) { border-left-width: 0; } .strip > :nth-child(n + 3) { border-top-width: 2px; } }
+  .strip-fill { position: absolute; inset: 0; z-index: 0; background: var(--fill); }
+  .strip-ink { color: var(--dark); }
 }
 
 /*
  * Motion. Rules (docs/11-design-system.md §Motion): the static page is complete without it; every
  * animation lives in a no-preference block so reduced motion = the finished state; no infinite loops.
  *
- * Hero load sequence, all settled by ~1.2s: headline lines rise out of a mask, then the lead + actions,
- * then the banner opens like a shutter. Nothing in the header animates.
+ * Hero load sequence, all settled by ~1.5s: headline lines rise out of a mask; then the signature move:
+ * the empty dashed "ad space" slot fills with lime and gets stamped BOOKED; the lead, actions, price
+ * tags and the banner proof arrive around it. Nothing in the header animates.
  */
-.lines .line { display: block; overflow: hidden; padding-bottom: 0.1em; margin-bottom: -0.1em; }
+/* Mask only the bottom edge (lines rise from below it), so stamps and tags may poke out above and to the side. */
+.lines .line { display: block; clip-path: inset(-1em -1em 0 -1em); padding-bottom: 0.1em; margin-bottom: -0.1em; }
 .lines [data-line] { display: block; }
 @media (prefers-reduced-motion: no-preference) {
   .lines [data-line] { transform: translateY(105%); animation: line-up var(--t-reveal) var(--ease-expo) forwards; animation-delay: calc(100ms + var(--i, 0) * var(--stagger-line)); }
   [data-load] { opacity: 0; transform: translateY(12px); animation: load-rise 500ms var(--ease) forwards; animation-delay: var(--d, 400ms); }
   [data-open] { clip-path: inset(0 0 100% 0 round var(--radius)); animation: load-open 1000ms var(--ease-in-out) 200ms forwards; }
-  /* Stickers arrive once, dealt like notes; afterwards they only drift with scroll (below). */
-  .sticker-in { opacity: 0; transform: translateY(16px) rotate(calc(var(--tilt, 0deg) * 2)) scale(0.96); animation: deal 700ms var(--ease-expo) forwards; animation-delay: var(--d, 500ms); }
+  .slot-word::after { clip-path: inset(0 100% 0 0); animation: slot-fill 600ms var(--ease-in-out) 750ms forwards; }
+  [data-stamp] { opacity: 0; scale: 1.6; animation: stamp-in 260ms var(--ease) 1250ms forwards; }
+  /* Tags arrive once, dealt like notes; afterwards they only drift with scroll (below). */
+  .deal { opacity: 0; transform: translateY(16px) rotate(calc(var(--tilt, 0deg) * 2)); animation: deal 700ms var(--ease-expo) forwards; animation-delay: var(--d, 500ms); }
+  .tape-track { animation: marquee 38s linear infinite; }
+  .tape-band:hover .tape-track { animation-play-state: paused; }
 }
+@keyframes slot-fill { to { clip-path: inset(0 0 0 0); } }
+@keyframes stamp-in { to { opacity: 1; scale: 1; } }
+@keyframes marquee { to { transform: translateX(-50%); } }
 @keyframes line-up { to { transform: none; } }
 @keyframes load-rise { to { opacity: 1; transform: none; } }
 @keyframes load-open { to { clip-path: inset(0 0 0 0 round var(--radius)); } }
 @keyframes deal { to { opacity: 1; transform: rotate(var(--tilt, 0deg)); } }
-.sticker-in { rotate: 0deg; transform: rotate(var(--tilt, 0deg)); }
+.deal { transform: rotate(var(--tilt, 0deg)); }
 
 /*
  * Scroll: CSS scroll timelines only (no JS, no listeners). Browsers without them simply show the
@@ -220,11 +264,15 @@
   @media (prefers-reduced-motion: no-preference) {
     /* Items of a reveal group rise in reading order as the group enters (stagger via --i). */
     .reveal > * { animation: reveal-rise linear both; animation-timeline: view(); animation-range: entry calc(5% + var(--i, 0) * 6%) entry calc(55% + var(--i, 0) * 6%); }
-    /* Small parallax drift (< 8% travel) for the hero stickers. */
+    /* Each step slot gets "booked": its colour sweeps in as the strip scrolls through. */
+    .strip-fill { animation: slot-fill linear both; animation-timeline: view(); animation-range: entry calc(20% + var(--i, 0) * 12%) cover calc(40% + var(--i, 0) * 6%); clip-path: inset(0 100% 0 0); }
+    .strip-ink { animation: ink-swap linear both; animation-timeline: view(); animation-range: entry calc(20% + var(--i, 0) * 12%) cover calc(40% + var(--i, 0) * 6%); }
+    /* Small parallax drift (< 8% travel) for the hero tags. */
     .drift { animation: drift linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
   }
 }
 @keyframes reveal-rise { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@keyframes ink-swap { from { color: var(--on-dark); } to { color: var(--dark); } }
 @keyframes drift { from { translate: 0 -10px; } to { translate: 0 30px; } }
 
 /* Solana wallet-adapter button → ink pill, same as .btn */

@@ -29,7 +29,7 @@ Two sessions are running at once. To avoid merge conflicts:
 | Session | Branch | Owns |
 |---|---|---|
 | **Launch** (session 3) | `claude/pensive-faraday-5frreq` | backend + launch: `apps/worker/**`, `.github/**`, `packages/**`, `apps/web/lib/**`, `apps/web/app/api/**`, `apps/web/instrumentation.ts`, `docs/**` (except the design section below) |
-| **Design** (new) | `claude/design-restyle` (branch off the latest `claude/pensive-faraday-5frreq`) | the look: `apps/web/app/globals.css`, `apps/web/app/layout.tsx` (header/footer **styling**), `apps/web/app/page.tsx` (home), `apps/web/components/**` (visual markup/classes only), fonts/assets in `apps/web/public/**`, plus `docs/11-design-system.md` (new) |
+| **Design** (done, ready to merge) | `claude/design-restyle` (branch off the latest `claude/pensive-faraday-5frreq`) | the look: `apps/web/app/globals.css`, `apps/web/app/layout.tsx` (header/footer **styling**), `apps/web/app/page.tsx` (home), `apps/web/components/**` (visual markup/classes only), fonts/assets in `apps/web/public/**`, plus `docs/11-design-system.md` (new) |
 
 Rules for the design session:
 - Don't change logic, props, data fetching, API calls or `lib/**`. Restyle with classes/markup only. If a component needs new data, note it in `docs/11-design-system.md` for the launch session.
@@ -38,6 +38,8 @@ Rules for the design session:
 - Browse https://blink.cash and https://wspr.ai with Playwright first (network access is Full). Record what you copy (palette, fonts, spacing, motion) in `docs/11-design-system.md`.
 - Before finishing: `pnpm typecheck` + `pnpm --filter @adspaces/web build`, screenshots (desktop + mobile), push your branch, and update the "Design" row here.
 - Merging: whichever session finishes second merges the other branch (`git merge`, no rebase) and resolves conflicts in favour of design for styling and launch for logic.
+
+**Design result (2026-10-28):** restyle done on `claude/design-restyle`. Concept "layout sheet" (dot-grid paper, dashed slots + crop marks, "Booked" stamp, hang-tag prices, one "Ad space available" tape). Serif EB Garamond + Figtree, self-hosted. See `docs/11-design-system.md` and ADR-0017; screenshots in `docs/design-screenshots/`. Typecheck + web build pass, no horizontal scroll at 390px. Besides the assigned files, it made class-only colour fixes in `app/bookings/[id]`, `app/dashboard`, `app/listings/[id]` and `app/ads/[id]` pages (they hard-coded dark-theme colours). New UI: use the tokens, and avoid `text-white` / `bg-white/x` on paper.
 
 ## In progress (session 3: launch-ready beta)
 Plan: `/root/.claude/plans/…` is not in the repo, so the plan is copied here:
@@ -50,7 +52,7 @@ Plan: `/root/.claude/plans/…` is not in the repo, so the plan is copied here:
 - [ ] ADR-0014 (fees), ADR-0015 (beta cap), ADR-0016 (GitHub Actions worker); update 04/06/00 docs
 
 ## Next after that
-1. **Redesign (being done in parallel by the Design session, see above)** to feel like https://blink.cash and https://wspr.ai. The owner set network access to Full for new sessions, so **browse both sites with Playwright first** (screenshots, fonts, colours, spacing, motion). Then restyle: tokens at the top of `apps/web/app/globals.css`, layout chrome in `app/layout.tsx`, home hero in `app/page.tsx`.
+1. **Redesign: done** on `claude/design-restyle` (see "Design result" above). Merge it. The second reference site is **wisprflow.ai**; wspr.ai is a parked domain.
 2. Evaluate the **Blink SDK** (blink.cash) for the payment step (ADR-0009), now that the site is reachable.
 3. Owner launch steps (see the runbook once written): X app + first credit purchase ($20 bonus), Neon, escrow wallet + SOL, Vercel, GitHub secrets.
 
@@ -86,6 +88,9 @@ su postgres -c "/usr/lib/postgresql/16/bin/pg_ctl -D /var/lib/postgresql/adspace
 - Killing the dev server with `pkill -f "next start"` also kills your own shell. Use `ps aux | grep "[n]ext-server"`.
 - Scratchpad dirs can lose permissions, so keep Postgres data under `/var/lib/postgresql`.
 - dHash alone can't tell flat colours apart. That's why signatures include mean RGB.
+- Styling: colours are tokens in `globals.css` on a light paper theme. `text-white` / `bg-white/5` / `bg-black/30` (from the old dark theme) are invisible or muddy now. Use `--sand`, `--panel-2`, `--muted`, `--on-dark`.
+- `next dev` generates `apps/web/AGENTS.md` (untracked). Don't commit it; `agentRules: false` in `next.config.ts` turns it off.
+- In Playwright, `waitForURL('**/dashboard')` also matches `/signin?next=/dashboard`. Use a pathname predicate.
 
 ## Open questions for the owner
 - Treasury address (Squads multisig recommended).

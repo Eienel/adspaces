@@ -33,7 +33,7 @@ Tick items as they land. Each item should map to code + docs.
 - [x] Wallet sign-in for businesses (ADR-0012)
 - [x] $0 dev mode: dev login, simulated payments/banners, `run-at` clock helper (ADR-0013)
 - [x] Owned-token banner source with encrypted refresh tokens (ADR-0013), untested against real X
-- [ ] Restyle to match blink.cash / wspr.ai (blocked: sites not reachable from the build session; need screenshots or network access)
+- [x] Restyle inspired by blink.cash / wisprflow.ai: "layout sheet" concept (ADR-0017, 11-design-system.md)
 - [ ] Notifications when it's someone's turn (accept / pay / upload banner)
 
 ## Phase 2 — Trust & growth
