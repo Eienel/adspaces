@@ -3,6 +3,7 @@ import { createDb } from "@adspaces/db";
 import { XApiBannerSource, type BannerSource, type PaymentsProvider } from "@adspaces/shared";
 import { loadImage, storeImage } from "@adspaces/shared/server";
 import { Connection } from "@solana/web3.js";
+import { sql } from "drizzle-orm";
 import { DevBannerSource, OwnedTokenBannerSource } from "./banner-sources";
 import { DEFAULT_JOB_CONFIG, type JobContext } from "./context";
 import { DevPaymentsProvider } from "./dev-payments";
@@ -15,6 +16,12 @@ import { verifyBanners } from "./jobs/verify";
 import { CustodialSolanaPayProvider } from "./solana-payments";
 
 const env = loadEnv();
+const once = process.argv.includes("--once");
+
+// Never simulate payments in production by accident (ADR-0013).
+if (process.env.NODE_ENV === "production" && env.paymentsProvider === "dev" && process.env.ALLOW_DEV_PAYMENTS !== "1") {
+  throw new Error("PAYMENTS_PROVIDER=dev in production. Set PAYMENTS_PROVIDER=solana (or ALLOW_DEV_PAYMENTS=1 for a staging demo).");
+}
 const db = createDb(env.databaseUrl, { max: 5 });
 
 const appSource = env.xBearerToken ? new XApiBannerSource(env.xBearerToken) : null;
@@ -62,8 +69,16 @@ async function tick() {
 }
 
 async function main() {
-  ctx.log("worker started", { tickMs: env.tickMs, bannerSource: env.bannerSource, payments: env.paymentsProvider });
+  ctx.log("worker started", { once, tickMs: env.tickMs, bannerSource: env.bannerSource, payments: env.paymentsProvider });
   if (env.paymentsProvider === "dev") ctx.log("WARNING: dev payments — no real money moves. Use PAYMENTS_PROVIDER=solana outside dev.");
+  // Fail fast (non-zero exit) only if the database is unreachable; job errors are logged and retried next tick.
+  await db.execute(sql`select 1`);
+  if (once) {
+    // One pass for schedulers like GitHub Actions cron (ADR-0016).
+    await tick();
+    await (db as unknown as { $client: { end: () => Promise<void> } }).$client.end();
+    return;
+  }
   while (!stopping) {
     await tick();
     await new Promise((r) => setTimeout(r, env.tickMs));
@@ -71,4 +86,10 @@ async function main() {
 }
 
 for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => (stopping = true));
-void main();
+main().then(
+  () => process.exit(0),
+  (err) => {
+    ctx.log("worker failed to start", { err: String(err) });
+    process.exit(1);
+  },
+);
