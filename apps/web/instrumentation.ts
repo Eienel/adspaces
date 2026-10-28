@@ -10,8 +10,13 @@ export async function register() {
   }
   const required = ["AUTH_SECRET", "AUTH_TWITTER_ID", "AUTH_TWITTER_SECRET"];
   if (!devAllowed) required.push("NEXT_PUBLIC_ESCROW_WALLET", "TOKEN_ENC_KEY");
-  if (process.env.VERCEL) required.push("BLOB_READ_WRITE_TOKEN");
   const missing = required.filter((k) => !process.env[k]);
+  // New Vercel Blob stores use BLOB_STORE_ID + OIDC instead of a read-write token.
+  if (process.env.VERCEL && !process.env.BLOB_READ_WRITE_TOKEN && !process.env.BLOB_STORE_ID) missing.push("BLOB_STORE_ID (connect a Vercel Blob store)");
   if (!Object.keys(process.env).some((k) => /(^|_)(DATABASE_URL|POSTGRES_URL)$/.test(k) && process.env[k])) missing.unshift("DATABASE_URL");
-  if (missing.length) throw new Error(`Missing required env in production: ${missing.join(", ")} (see docs/10-launch-runbook.md)`);
+  if (missing.length) {
+    // Shows up in Vercel → Logs. Every request fails until this is fixed, on purpose.
+    console.error(`[startup] Missing required env in production: ${missing.join(", ")}`);
+    throw new Error(`Missing required env in production: ${missing.join(", ")} (see docs/10-launch-runbook.md)`);
+  }
 }
