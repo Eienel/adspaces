@@ -16,6 +16,8 @@ A marketplace where X (Twitter) users rent out their **profile banner (header im
 | [05-verification.md](05-verification.md) | How we prove a banner was actually used |
 | [06-x-platform-notes.md](06-x-platform-notes.md) | Blue-tick finding, X API pricing/endpoints, policy risks |
 | [07-security-legal.md](07-security-legal.md) | Keys, custody, X ToS, ad disclosure, compliance |
+| [08-profile-valuation.md](08-profile-valuation.md) | Profile worth estimate → max price per day |
+| [09-token.md](09-token.md) | Planned token on Meteora DBC, virality burns (Phase 4) |
 | [roadmap.md](roadmap.md) | Phased checklist — **keep updated** |
 | [decisions/](decisions/) | Architecture Decision Records (ADRs) — one per meaningful choice |
 | [log/](log/) | Dated build log — one entry per work session |

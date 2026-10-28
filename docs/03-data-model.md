@@ -5,7 +5,7 @@ Source of truth: `packages/db/src/schema.ts`. Keep this doc in sync.
 ## Tables
 | Table | Key columns |
 |---|---|
-| `users` | id (uuid), x_id (unique), handle, name, avatar_url, followers_count, verified, wallet_pubkey (unique, nullable), created_at |
+| `users` | id (uuid), x_id (unique), handle, name, avatar_url, followers_count, verified, wallet_pubkey (unique, nullable), avg_impressions, engagement_rate_bps, est_daily_views, max_price_per_day_usdc, metrics_synced_at, created_at |
 | `listings` | id, seller_id → users, title, description, price_per_day_usdc (integer, **micro-USDC**, 6 decimals), min_days, max_days, categories text[], blocked_categories text[], status (`active`/`paused`), created_at, updated_at |
 | `creatives` | id, advertiser_id → users, image_url, phash (hex), width, height, created_at |
 | `bookings` | id, listing_id, seller_id, advertiser_id, creative_id, days, start_at, end_at, amount_usdc (micro), fee_bps, payment_reference (unique pubkey), funding_tx, settlement_tx, status, created_at, updated_at |

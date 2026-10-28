@@ -10,6 +10,7 @@ Tick items as they land. Each item should map to code + docs.
 
 ## Phase 1 — MVP (devnet)
 - [ ] `packages/shared`: booking state machine, fee math, zod schemas, dHash, settlement rule
+- [ ] `packages/shared`: profile valuation + price cap (ADR-0007)
 - [ ] `packages/db`: Drizzle schema + migrations
 - [ ] Web: sign in with X, user upsert
 - [ ] Web: wallet connect + signed-nonce wallet link
@@ -29,8 +30,16 @@ Tick items as they land. Each item should map to code + docs.
 - [ ] Ratings / reputation
 - [ ] Notifications (email / X DM)
 - [ ] Sanctions screening on payout wallets
+- [ ] Tracked short links / QR in creatives → virality score
+- [ ] Analytics-screenshot review to raise price caps
 
 ## Phase 3 — Mainnet & scale
 - [ ] Anchor escrow program (ADR-0006) + tests on devnet
 - [ ] Audit, mainnet deploy, migrate `PaymentsProvider`
 - [ ] Bulk campaigns, analytics
+
+## Phase 4 — Token (proposed, ADR-0008)
+- [ ] Legal opinion on token + buyback-and-burn
+- [ ] Token launch on Meteora DBC
+- [ ] Fee-funded buyback-and-burn job weighted by virality score
+- [ ] Public burn log page
