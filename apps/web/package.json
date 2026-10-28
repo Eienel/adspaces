@@ -9,7 +9,8 @@
     "start": "next start",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "vercel-build": "pnpm --filter @adspaces/db migrate && next build"
   },
   "dependencies": {
     "@adspaces/db": "workspace:*",
@@ -43,5 +44,8 @@
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "vitest": "4.1.12"
+  },
+  "engines": {
+    "node": ">=22.12"
   }
 }

@@ -49,6 +49,9 @@ Plan: `/root/.claude/plans/…` is not in the repo, so the plan is copied here:
 - [ ] `docs/10-launch-runbook.md` (X app, Neon, Solana wallets, Vercel, GitHub secrets, $1 smoke test)
 - [ ] ADR-0014 (fees), ADR-0015 (beta cap), ADR-0016 (GitHub Actions worker); update 04/06/00 docs
 
+## Vercel
+Owner is connecting Vercel for a **dev-mode staging demo** (no X credits, no money): see `docs/12-vercel-preview.md`. `apps/web` has a `vercel-build` script (migrate + build). Preview URLs per branch, so the design branch can be reviewed live.
+
 ## Next after that
 1. **Redesign (being done in parallel by the Design session, see above)** to feel like https://blink.cash and https://wspr.ai. The owner set network access to Full for new sessions, so **browse both sites with Playwright first** (screenshots, fonts, colours, spacing, motion). Then restyle: tokens at the top of `apps/web/app/globals.css`, layout chrome in `app/layout.tsx`, home hero in `app/page.tsx`.
 2. Evaluate the **Blink SDK** (blink.cash) for the payment step (ADR-0009), now that the site is reachable.
