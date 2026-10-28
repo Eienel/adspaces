@@ -13,6 +13,7 @@ CREATE TABLE "bookings" (
 	"amount_usdc" bigint NOT NULL,
 	"fee_bps" integer NOT NULL,
 	"payment_reference" text,
+	"accepted_at" timestamp with time zone,
 	"funding_tx" text,
 	"payer_wallet" text,
 	"funded_at" timestamp with time zone,

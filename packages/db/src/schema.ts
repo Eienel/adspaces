@@ -108,6 +108,7 @@ export const bookings = pgTable(
     amountUsdc: money("amount_usdc").notNull(),
     feeBps: integer("fee_bps").notNull(),
     paymentReference: text("payment_reference").unique(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
     fundingTx: text("funding_tx").unique(),
     payerWallet: text("payer_wallet"),
     fundedAt: timestamp("funded_at", { withTimezone: true }),

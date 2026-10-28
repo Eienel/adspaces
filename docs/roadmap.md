@@ -30,6 +30,8 @@ Tick items as they land. Each item should map to code + docs.
 - [ ] Ratings / reputation
 - [ ] Notifications (email / X DM)
 - [ ] Sanctions screening on payout wallets
+- [ ] Solana Action / Blink endpoint to pay for bookings from X (ADR-0009)
+- [ ] Evaluate blink.cash as a payment platform (ADR-0009)
 - [ ] Tracked short links / QR in creatives → virality score
 - [ ] Analytics-screenshot review to raise price caps
 
