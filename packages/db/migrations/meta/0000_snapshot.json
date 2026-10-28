@@ -1,9 +1,271 @@
 {
-  "id": "04f7226f-02f8-4b23-a36c-52fa6a2c4902",
+  "id": "478fe528-0238-497a-b5c2-e6841be47c38",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.ad_campaigns": {
+      "name": "ad_campaigns",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "business_id": {
+          "name": "business_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "brief": {
+          "name": "brief",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "creative_id": {
+          "name": "creative_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shape": {
+          "name": "shape",
+          "type": "segment_shape",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ad_category": {
+          "name": "ad_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "audience": {
+          "name": "audience",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "max_price_per_day_usdc": {
+          "name": "max_price_per_day_usdc",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weeks": {
+          "name": "weeks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "campaign_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "campaigns_status_created_idx": {
+          "name": "campaigns_status_created_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "campaigns_business_idx": {
+          "name": "campaigns_business_idx",
+          "columns": [
+            {
+              "expression": "business_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ad_campaigns_business_id_users_id_fk": {
+          "name": "ad_campaigns_business_id_users_id_fk",
+          "tableFrom": "ad_campaigns",
+          "tableTo": "users",
+          "columnsFrom": [
+            "business_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "ad_campaigns_creative_id_creatives_id_fk": {
+          "name": "ad_campaigns_creative_id_creatives_id_fk",
+          "tableFrom": "ad_campaigns",
+          "tableTo": "creatives",
+          "columnsFrom": [
+            "creative_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.banner_compositions": {
+      "name": "banner_compositions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "listing_id": {
+          "name": "listing_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cycle_start": {
+          "name": "cycle_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "image_url": {
+          "name": "image_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content_hash": {
+          "name": "content_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "segment_signatures": {
+          "name": "segment_signatures",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "booking_ids": {
+          "name": "booking_ids",
+          "type": "uuid[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "compositions_listing_cycle_uq": {
+          "name": "compositions_listing_cycle_uq",
+          "columns": [
+            {
+              "expression": "listing_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cycle_start",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "banner_compositions_listing_id_listings_id_fk": {
+          "name": "banner_compositions_listing_id_listings_id_fk",
+          "tableFrom": "banner_compositions",
+          "tableTo": "listings",
+          "columnsFrom": [
+            "listing_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.bookings": {
       "name": "bookings",
       "schema": "",
@@ -14,6 +276,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "segment_id": {
+          "name": "segment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         },
         "listing_id": {
           "name": "listing_id",
@@ -39,21 +307,34 @@
           "primaryKey": false,
           "notNull": true
         },
+        "campaign_id": {
+          "name": "campaign_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "origin": {
+          "name": "origin",
+          "type": "booking_origin",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
         "ad_category": {
           "name": "ad_category",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "days": {
-          "name": "days",
-          "type": "integer",
+        "cycle_start": {
+          "name": "cycle_start",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
         },
-        "start_at": {
-          "name": "start_at",
-          "type": "timestamp with time zone",
+        "weeks": {
+          "name": "weeks",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -213,6 +494,48 @@
           "method": "btree",
           "with": {}
         },
+        "bookings_segment_cycle_idx": {
+          "name": "bookings_segment_cycle_idx",
+          "columns": [
+            {
+              "expression": "segment_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cycle_start",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "bookings_listing_cycle_idx": {
+          "name": "bookings_listing_cycle_idx",
+          "columns": [
+            {
+              "expression": "listing_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cycle_start",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "bookings_seller_idx": {
           "name": "bookings_seller_idx",
           "columns": [
@@ -254,9 +577,37 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "bookings_campaign_idx": {
+          "name": "bookings_campaign_idx",
+          "columns": [
+            {
+              "expression": "campaign_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
+        "bookings_segment_id_segments_id_fk": {
+          "name": "bookings_segment_id_segments_id_fk",
+          "tableFrom": "bookings",
+          "tableTo": "segments",
+          "columnsFrom": [
+            "segment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "bookings_listing_id_listings_id_fk": {
           "name": "bookings_listing_id_listings_id_fk",
           "tableFrom": "bookings",
@@ -308,6 +659,19 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "bookings_campaign_id_ad_campaigns_id_fk": {
+          "name": "bookings_campaign_id_ad_campaigns_id_fk",
+          "tableFrom": "bookings",
+          "tableTo": "ad_campaigns",
+          "columnsFrom": [
+            "campaign_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -345,6 +709,13 @@
         "advertiser_id": {
           "name": "advertiser_id",
           "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shape": {
+          "name": "shape",
+          "type": "segment_shape",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -432,25 +803,40 @@
           "notNull": true,
           "default": "''"
         },
-        "price_per_day_usdc": {
-          "name": "price_per_day_usdc",
-          "type": "bigint",
+        "layout": {
+          "name": "layout",
+          "type": "banner_layout",
+          "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'full'"
         },
-        "min_days": {
-          "name": "min_days",
+        "original_banner_url": {
+          "name": "original_banner_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "show_available_tag": {
+          "name": "show_available_tag",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "min_weeks": {
+          "name": "min_weeks",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 1
         },
-        "max_days": {
-          "name": "max_days",
+        "max_weeks": {
+          "name": "max_weeks",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": 30
+          "default": 4
         },
         "categories": {
           "name": "categories",
@@ -461,6 +847,20 @@
         },
         "blocked_categories": {
           "name": "blocked_categories",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "min_price_per_day_usdc": {
+          "name": "min_price_per_day_usdc",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "shapes": {
+          "name": "shapes",
           "type": "text[]",
           "primaryKey": false,
           "notNull": true,
@@ -515,7 +915,7 @@
               "nulls": "last"
             },
             {
-              "expression": "price_per_day_usdc",
+              "expression": "min_price_per_day_usdc",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -569,6 +969,125 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.segments": {
+      "name": "segments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "listing_id": {
+          "name": "listing_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idx": {
+          "name": "idx",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shape": {
+          "name": "shape",
+          "type": "segment_shape",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "x": {
+          "name": "x",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "y": {
+          "name": "y",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "w": {
+          "name": "w",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "h": {
+          "name": "h",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "price_per_day_usdc": {
+          "name": "price_per_day_usdc",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "segments_listing_idx": {
+          "name": "segments_listing_idx",
+          "columns": [
+            {
+              "expression": "listing_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "active",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "segments_listing_id_listings_id_fk": {
+          "name": "segments_listing_id_listings_id_fk",
+          "tableFrom": "segments",
+          "tableTo": "listings",
+          "columnsFrom": [
+            "listing_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.users": {
       "name": "users",
       "schema": "",
@@ -584,13 +1103,13 @@
           "name": "x_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "handle": {
           "name": "handle",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "name": {
           "name": "name",
@@ -626,6 +1145,24 @@
         },
         "wallet_pubkey": {
           "name": "wallet_pubkey",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "x_refresh_token_enc": {
+          "name": "x_refresh_token_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "business_name": {
+          "name": "business_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "business_url": {
+          "name": "business_url",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -823,7 +1360,13 @@
           "name": "user_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "pubkey": {
+          "name": "pubkey",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "nonce": {
           "name": "nonce",
@@ -876,6 +1419,14 @@
     }
   },
   "enums": {
+    "public.booking_origin": {
+      "name": "booking_origin",
+      "schema": "public",
+      "values": [
+        "business_request",
+        "creator_offer"
+      ]
+    },
     "public.booking_status": {
       "name": "booking_status",
       "schema": "public",
@@ -891,12 +1442,41 @@
         "cancelled"
       ]
     },
+    "public.campaign_status": {
+      "name": "campaign_status",
+      "schema": "public",
+      "values": [
+        "open",
+        "closed"
+      ]
+    },
+    "public.banner_layout": {
+      "name": "banner_layout",
+      "schema": "public",
+      "values": [
+        "full",
+        "halves",
+        "thirds",
+        "main_side",
+        "side_main"
+      ]
+    },
     "public.listing_status": {
       "name": "listing_status",
       "schema": "public",
       "values": [
         "active",
         "paused"
+      ]
+    },
+    "public.segment_shape": {
+      "name": "segment_shape",
+      "schema": "public",
+      "values": [
+        "full",
+        "half",
+        "third",
+        "two_thirds"
       ]
     }
   },

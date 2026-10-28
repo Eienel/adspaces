@@ -1,14 +1,16 @@
 /**
- * End-to-end worker lifecycle against a real Postgres (fake chain + fake X).
+ * End-to-end worker lifecycle against a real Postgres (fake chain, dev banner source, in-memory images).
  * Run with TEST_DATABASE_URL pointing at a migrated, disposable database. Skipped otherwise.
  */
-import { bookings, createDb, creatives, listings, users, verifications } from "@adspaces/db";
-import { MockBannerSource, type PaymentsProvider, type PreparedTx } from "@adspaces/shared";
-import { dHash } from "@adspaces/shared/phash";
+import { bannerCompositions, bookings, createDb, creatives, listings, segments, users } from "@adspaces/db";
+import { layoutSegments, type PaymentsProvider, type PreparedTx } from "@adspaces/shared";
+import { composeBanner } from "@adspaces/shared/server";
 import { eq, sql } from "drizzle-orm";
 import sharp from "sharp";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { DevBannerSource } from "../src/banner-sources";
 import { DEFAULT_JOB_CONFIG, type JobContext } from "../src/context";
+import { runCycle } from "../src/jobs/cycle";
 import { watchPayments } from "../src/jobs/payments";
 import { settleBookings } from "../src/jobs/settle";
 import { verifyBanners } from "../src/jobs/verify";
@@ -16,62 +18,63 @@ import { verifyBanners } from "../src/jobs/verify";
 const url = process.env.TEST_DATABASE_URL;
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
+const CYCLE = new Date("2026-11-09T00:00:00Z"); // Monday
 
-async function bannerPng(seed: number): Promise<Buffer> {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="500">
-    <rect width="1500" height="500" fill="hsl(${seed * 67},70%,40%)"/>
-    <circle cx="${300 + seed * 150}" cy="250" r="180" fill="white"/>
-    <rect x="${1100 - seed * 120}" y="80" width="250" height="340" fill="black"/></svg>`;
+async function art(seed: number, w: number, h: number): Promise<Buffer> {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+    <rect width="${w}" height="${h}" fill="hsl(${seed * 67},70%,45%)"/>
+    <circle cx="${w * (0.2 + (seed % 5) * 0.15)}" cy="${h / 2}" r="${h / 3}" fill="white"/>
+    <rect x="${w * (0.75 - (seed % 3) * 0.2)}" y="${h * 0.1}" width="${w / 6}" height="${h * 0.8}" fill="black"/></svg>`;
   return sharp(Buffer.from(svg)).png().toBuffer();
 }
+/** What X does to an uploaded banner. */
+const reencode = (png: Uint8Array) => sharp(png).jpeg({ quality: 70 }).toBuffer();
 
 class FakePayments implements PaymentsProvider {
-  paid = new Map<string, { payer: string; amount: number }>();
-  sent: { sig: string; kind: string; recipient: string; amount: number }[] = [];
-  statuses = new Map<string, "confirmed" | "pending">();
+  paid = new Map<string, string>(); // reference → payer
+  sent: { kind: string; recipient: string; amount: number; bookingId: string }[] = [];
   private n = 0;
-  async findPayment({ reference }: { reference: string }) {
-    const p = this.paid.get(reference);
-    return p ? { signature: `fund-${reference}`, payer: p.payer, amountMicro: p.amount } : null;
+  async findPayment({ reference, amountMicro }: { reference: string; amountMicro: number }) {
+    const payer = this.paid.get(reference);
+    return payer ? { signature: `fund-${reference}`, payer, amountMicro } : null;
   }
-  async prepareSettlement(a: { kind: string; recipient: string; amountMicro: number }): Promise<PreparedTx> {
-    const sig = `settle-${++this.n}`;
-    this.sent.push({ sig, kind: a.kind, recipient: a.recipient, amount: a.amountMicro });
-    return { signature: sig, serialized: new Uint8Array(), lastValidBlockHeight: 100 };
+  async prepareSettlement(a: { kind: string; recipient: string; amountMicro: number; bookingId: string }): Promise<PreparedTx> {
+    this.sent.push({ kind: a.kind, recipient: a.recipient, amount: a.amountMicro, bookingId: a.bookingId });
+    return { signature: `settle-${++this.n}`, serialized: new Uint8Array(), lastValidBlockHeight: 1 };
   }
-  async send(tx: PreparedTx) {
-    this.statuses.set(tx.signature, "confirmed");
-  }
-  async txStatus(sig: string) {
-    return this.statuses.get(sig) ?? "pending";
+  async send() {}
+  async txStatus() {
+    return "confirmed" as const;
   }
 }
 
-describe.skipIf(!url)("worker lifecycle", () => {
+describe.skipIf(!url)("worker lifecycle: multi-ad banner, weekly cycle", () => {
   const db = url ? createDb(url, { max: 2 }) : (undefined as never);
-  let clock = new Date("2026-11-01T00:00:00Z");
+  let clock: Date;
   let payments: FakePayments;
-  let banners: MockBannerSource;
-  let images: Map<string, Buffer>;
+  let images: Map<string, Uint8Array>;
   let ctx: JobContext;
 
   beforeEach(async () => {
-    await db.execute(sql`truncate verifications, bookings, creatives, listings, wallet_challenges, users cascade`);
-    clock = new Date("2026-11-01T00:00:00Z");
+    await db.execute(sql`truncate verifications, banner_compositions, bookings, ad_campaigns, segments, creatives, listings, wallet_challenges, users cascade`);
+    clock = new Date("2026-11-04T10:00:00Z"); // Wednesday before the cycle
     payments = new FakePayments();
-    banners = new MockBannerSource();
     images = new Map();
     ctx = {
       db,
       payments,
-      banners,
-      fetchImage: async (u) => {
+      banners: new DevBannerSource(db),
+      loadImage: async (u) => {
         const img = images.get(u);
         if (!img) throw new Error(`no image ${u}`);
         return img;
       },
+      storeImage: async (name, data) => {
+        images.set(`mem://${name}`, data);
+        return `mem://${name}`;
+      },
       now: () => clock,
-      random: () => 0.5,
+      random: () => 0.5, // checks every 12h
       config: { ...DEFAULT_JOB_CONFIG },
       log: () => {},
     };
@@ -80,119 +83,140 @@ describe.skipIf(!url)("worker lifecycle", () => {
     await (db as unknown as { $client: { end: () => Promise<void> } }).$client.end();
   });
 
-  async function seedAcceptedBooking(days = 2) {
-    const [seller] = await db.insert(users).values({ xId: "100", handle: "seller", name: "Seller", walletPubkey: "SellerWallet" }).returning();
-    const [adv] = await db.insert(users).values({ xId: "200", handle: "adv", name: "Adv" }).returning();
-    const [listing] = await db.insert(listings).values({ sellerId: seller!.id, title: "My banner", pricePerDayUsdc: 10_000_000 }).returning();
-    const creativePng = await bannerPng(1);
-    const [creative] = await db
-      .insert(creatives)
-      .values({ advertiserId: adv!.id, imageUrl: "https://cdn/creative.png", phash: await dHash(creativePng), width: 1500, height: 500 })
+  const advanceTo = (iso: string) => (clock = new Date(iso));
+  const advance = (ms: number) => (clock = new Date(clock.getTime() + ms));
+  const get = async (id: string) => (await db.select().from(bookings).where(eq(bookings.id, id)))[0]!;
+  const setBanner = async (png: Uint8Array) => {
+    const key = `mem://banner-${images.size}.jpg`;
+    images.set(key, await reencode(png));
+    await db.update(users).set({ bannerUrl: key }).where(eq(users.handle, "alice"));
+  };
+
+  async function seed() {
+    images.set("mem://alice-original.png", await art(9, 1500, 500));
+    const [alice] = await db.insert(users).values({ xId: "dev:alice", handle: "alice", name: "Alice", walletPubkey: "AliceWallet" }).returning();
+    const [listing] = await db
+      .insert(listings)
+      .values({ sellerId: alice!.id, title: "Thirds", layout: "thirds", originalBannerUrl: "mem://alice-original.png" })
       .returning();
-    const [booking] = await db
-      .insert(bookings)
-      .values({
-        listingId: listing!.id,
-        sellerId: seller!.id,
-        advertiserId: adv!.id,
-        creativeId: creative!.id,
-        adCategory: "crypto",
-        days,
-        startAt: clock,
-        amountUsdc: days * 10_000_000,
-        feeBps: 1000,
-        paymentReference: "Ref1",
-        acceptedAt: clock,
-        status: "accepted",
-      })
+    const segs = await db
+      .insert(segments)
+      .values(layoutSegments("thirds").map((s) => ({ listingId: listing!.id, idx: s.idx, shape: s.shape, ...s.rect, pricePerDayUsdc: 1_000_000 })))
       .returning();
-    // X re-encodes the creative when the seller uploads it as a banner.
-    images.set("https://pbs/banner-ok/1500x500", await sharp(creativePng).resize(1000, 333).jpeg({ quality: 70 }).toBuffer());
-    images.set("https://pbs/banner-other/1500x500", await bannerPng(4));
-    return booking!;
+    const book = async (i: number, seed: number) => {
+      const [biz] = await db.insert(users).values({ name: `Biz${i}`, walletPubkey: `Biz${i}Wallet` }).returning();
+      images.set(`mem://ad${i}.png`, await art(seed, 500, 500));
+      const [cr] = await db.insert(creatives).values({ advertiserId: biz!.id, shape: "third", imageUrl: `mem://ad${i}.png`, phash: "x", width: 500, height: 500 }).returning();
+      const [b] = await db
+        .insert(bookings)
+        .values({
+          segmentId: segs[i]!.id,
+          listingId: listing!.id,
+          sellerId: alice!.id,
+          advertiserId: biz!.id,
+          creativeId: cr!.id,
+          origin: "business_request",
+          adCategory: "crypto",
+          cycleStart: CYCLE,
+          weeks: 1,
+          amountUsdc: 7_000_000,
+          feeBps: 1000,
+          paymentReference: `Ref${i}`,
+          acceptedAt: clock,
+          status: "accepted",
+        })
+        .returning();
+      return b!;
+    };
+    const b0 = await book(0, 1);
+    const b1 = await book(1, 2); // never pays
+    const b2 = await book(2, 3);
+    return { listing: listing!, segs, b0, b1, b2 };
   }
 
-  const get = async (id: string) => (await db.select().from(bookings).where(eq(bookings.id, id)))[0]!;
-  const advance = (ms: number) => (clock = new Date(clock.getTime() + ms));
+  it("two ads share a banner; one gets swapped out → that one is refunded, the other is paid", async () => {
+    const { listing, b0, b1, b2 } = await seed();
+    payments.paid.set("Ref0", "Biz0Wallet");
+    payments.paid.set("Ref2", "Biz2Wallet");
+    expect(await watchPayments(ctx)).toBe(2);
+    expect((await get(b0.id)).nextCheckAt!.getTime()).toBe(CYCLE.getTime()); // no API spend before the cycle
 
-  it("happy path: pay → live → checks pass → release with fee split", async () => {
-    const b = await seedAcceptedBooking(2);
-    expect(await watchPayments(ctx)).toBe(0);
-    payments.paid.set("Ref1", { payer: "AdvWallet", amount: 20_000_000 });
-    expect(await watchPayments(ctx)).toBe(1);
-    expect((await get(b.id)).status).toBe("funded");
+    expect(await runCycle(ctx)).toBe(0); // before cutoff
+    advanceTo("2026-11-07T13:00:00Z"); // after Saturday 12:00 cutoff
+    expect(await runCycle(ctx)).toBe(1);
+    expect((await get(b1.id)).status).toBe("cancelled"); // unpaid at cutoff
+    const [comp] = await db.select().from(bannerCompositions).where(eq(bannerCompositions.listingId, listing.id));
+    expect(comp!.bookingIds.sort()).toEqual([b0.id, b2.id].sort());
+    expect(Object.keys(comp!.segmentSignatures)).toHaveLength(3);
+    expect(await runCycle(ctx)).toBe(0); // idempotent
 
-    banners.banners.set("100", "https://pbs/banner-ok");
-    advance(10 * 60 * 1000);
-    await verifyBanners(ctx);
-    const live = await get(b.id);
-    expect(live.status).toBe("live");
-    expect(live.endAt!.getTime() - live.liveAt!.getTime()).toBe(2 * DAY);
+    expect(await verifyBanners(ctx)).toBe(0); // nothing due until Monday
+    await setBanner(images.get(comp!.imageUrl)!);
+    advanceTo("2026-11-09T00:30:00Z");
+    expect(await verifyBanners(ctx)).toBe(2);
+    expect((await get(b0.id)).status).toBe("live");
+    expect((await get(b2.id)).status).toBe("live");
 
-    for (let i = 0; i < 12; i++) {
-      advance(6 * HOUR);
+    for (let i = 0; i < 4; i++) {
+      advance(12 * HOUR);
       await verifyBanners(ctx);
     }
-    const checks = await db.select().from(verifications).where(eq(verifications.bookingId, b.id));
-    expect(checks.length).toBeGreaterThan(5);
-    expect(checks.every((c) => c.pass)).toBe(true);
-
-    await settleBookings(ctx); // prepares + sends release
-    expect(payments.sent).toEqual([{ sig: "settle-1", kind: "release", recipient: "SellerWallet", amount: 20_000_000 }]);
-    await settleBookings(ctx); // sees confirmation
-    const done = await get(b.id);
-    expect(done.status).toBe("completed");
-    expect(done.settlementTx).toBe("settle-1");
-    await settleBookings(ctx);
-    expect(payments.sent).toHaveLength(1); // idempotent
-  });
-
-  it("seller swaps the banner mid-booking → refund", async () => {
-    const b = await seedAcceptedBooking(2);
-    payments.paid.set("Ref1", { payer: "AdvWallet", amount: 20_000_000 });
-    await watchPayments(ctx);
-    banners.banners.set("100", "https://pbs/banner-ok");
-    advance(10 * 60 * 1000);
-    await verifyBanners(ctx);
-    banners.banners.set("100", "https://pbs/banner-other");
+    // Day 2: creator swaps Biz2's ad (right third) for their own art.
+    const segsSorted = layoutSegments("thirds");
+    const tampered = await composeBanner({
+      base: images.get("mem://alice-original.png")!,
+      showTag: true,
+      segments: segsSorted.map((s) => ({ rect: s.rect, creative: s.idx === 0 ? images.get("mem://ad0.png")! : s.idx === 2 ? images.get("mem://alice-original.png")! : null })),
+    });
+    await setBanner(tampered);
     for (let i = 0; i < 12; i++) {
-      advance(6 * HOUR);
+      advance(12 * HOUR);
       await verifyBanners(ctx);
     }
+    expect(clock > (await get(b0.id)).endAt!).toBe(true);
+
     await settleBookings(ctx);
     await settleBookings(ctx);
-    expect(payments.sent[0]).toMatchObject({ kind: "refund", recipient: "AdvWallet", amount: 20_000_000 });
-    expect((await get(b.id)).status).toBe("refunded");
+    expect((await get(b0.id)).status).toBe("completed");
+    expect((await get(b2.id)).status).toBe("refunded");
+    expect(payments.sent).toEqual(
+      expect.arrayContaining([
+        { kind: "release", recipient: "AliceWallet", amount: 7_000_000, bookingId: b0.id },
+        { kind: "refund", recipient: "Biz2Wallet", amount: 7_000_000, bookingId: b2.id },
+      ]),
+    );
+    await settleBookings(ctx);
+    expect(payments.sent).toHaveLength(2); // idempotent
   });
 
-  it("banner never set → refund after grace period", async () => {
-    const b = await seedAcceptedBooking(1);
-    payments.paid.set("Ref1", { payer: "AdvWallet", amount: 10_000_000 });
+  it("banner never set → refunded after the cycle's grace period", async () => {
+    const { b0 } = await seed();
+    payments.paid.set("Ref0", "Biz0Wallet");
     await watchPayments(ctx);
-    banners.banners.set("100", null);
+    advanceTo("2026-11-07T13:00:00Z");
+    await runCycle(ctx);
+    advanceTo("2026-11-09T00:30:00Z");
     for (let i = 0; i < 26; i++) {
-      advance(HOUR);
       await verifyBanners(ctx);
       await settleBookings(ctx);
+      advance(HOUR);
     }
-    expect((await get(b.id)).status).toBe("refunded");
-    expect(payments.sent[0]).toMatchObject({ kind: "refund", recipient: "AdvWallet" });
+    expect((await get(b0.id)).status).toBe("refunded");
+    expect(payments.sent).toEqual([{ kind: "refund", recipient: "Biz0Wallet", amount: 7_000_000, bookingId: b0.id }]);
   });
 
-  it("X API outage is logged as errors and does not fail the seller", async () => {
-    const b = await seedAcceptedBooking(1);
-    payments.paid.set("Ref1", { payer: "AdvWallet", amount: 10_000_000 });
+  it("a payment that lands after the cutoff cancelled the booking is refunded", async () => {
+    const { b1 } = await seed();
+    advanceTo("2026-11-07T13:00:00Z");
+    await runCycle(ctx);
+    expect((await get(b1.id)).status).toBe("cancelled");
+    payments.paid.set("Ref1", "Biz1Wallet"); // too late
     await watchPayments(ctx);
-    banners.banners.set("100", "https://pbs/banner-ok");
-    advance(10 * 60 * 1000);
-    await verifyBanners(ctx);
-    ctx.banners = { getBanners: async () => Promise.reject(new Error("503")) };
-    for (let i = 0; i < 6; i++) {
-      advance(6 * HOUR);
-      await verifyBanners(ctx);
-    }
     await settleBookings(ctx);
     await settleBookings(ctx);
-    expect((await get(b.id)).status).toBe("completed");
+    const b = await get(b1.id);
+    expect(b.status).toBe("cancelled");
+    expect(b.settledAt).not.toBeNull();
+    expect(payments.sent).toEqual([{ kind: "refund", recipient: "Biz1Wallet", amount: 7_000_000, bookingId: b1.id }]);
   });
 });

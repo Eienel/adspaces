@@ -1,7 +1,7 @@
 /** Refresh seller valuation signals (ADR-0007). Costs ~1 user read + ~10 post reads per seller per sync. */
 import { listings, users } from "@adspaces/db";
 import { estimateDailyProfileViews, getRecentPosts, getUsersByIds, maxPricePerDayMicro, signalsFromPosts } from "@adspaces/shared";
-import { and, eq, isNull, lt, or } from "drizzle-orm";
+import { and, eq, isNull, lt, not, like, or, isNotNull } from "drizzle-orm";
 import type { JobContext } from "../context";
 
 export async function syncSellerMetrics(ctx: JobContext, bearerToken: string, limit = 50): Promise<number> {
@@ -11,17 +11,24 @@ export async function syncSellerMetrics(ctx: JobContext, bearerToken: string, li
     .select({ id: users.id, xId: users.xId, reportedDailyViews: users.reportedDailyViews })
     .from(users)
     .innerJoin(listings, eq(listings.sellerId, users.id))
-    .where(and(eq(listings.status, "active"), or(isNull(users.metricsSyncedAt), lt(users.metricsSyncedAt, stale))))
+    .where(
+      and(
+        eq(listings.status, "active"),
+        isNotNull(users.xId),
+        not(like(users.xId, "dev:%")),
+        or(isNull(users.metricsSyncedAt), lt(users.metricsSyncedAt, stale)),
+      ),
+    )
     .limit(limit);
   if (!sellers.length) return 0;
 
-  const xUsers = new Map((await getUsersByIds(bearerToken, sellers.map((s) => s.xId))).map((u) => [u.id, u]));
+  const xUsers = new Map((await getUsersByIds(bearerToken, sellers.map((s) => s.xId!))).map((u) => [u.id, u]));
   let n = 0;
   for (const s of sellers) {
-    const xu = xUsers.get(s.xId);
+    const xu = xUsers.get(s.xId!);
     if (!xu) continue;
     try {
-      const signals = signalsFromPosts(xu, await getRecentPosts(bearerToken, s.xId, 10));
+      const signals = signalsFromPosts(xu, await getRecentPosts(bearerToken, s.xId!, 10));
       const withReported = { ...signals, reportedProfileVisitsPerDay: s.reportedDailyViews };
       await db
         .update(users)

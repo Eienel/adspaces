@@ -1,9 +1,13 @@
-/** AdSpaces worker: payment watcher, banner verifier, settlement, metrics sync. */
+/** AdSpaces worker: weekly cycle, payment watcher, banner verifier, settlement, metrics sync. */
 import { createDb } from "@adspaces/db";
-import { XApiBannerSource } from "@adspaces/shared";
+import { XApiBannerSource, type BannerSource, type PaymentsProvider } from "@adspaces/shared";
+import { loadImage, storeImage } from "@adspaces/shared/server";
 import { Connection } from "@solana/web3.js";
+import { DevBannerSource, OwnedTokenBannerSource } from "./banner-sources";
 import { DEFAULT_JOB_CONFIG, type JobContext } from "./context";
+import { DevPaymentsProvider } from "./dev-payments";
 import { loadEnv } from "./env";
+import { runCycle } from "./jobs/cycle";
 import { syncSellerMetrics } from "./jobs/metrics";
 import { watchPayments } from "./jobs/payments";
 import { settleBookings } from "./jobs/settle";
@@ -11,33 +15,38 @@ import { verifyBanners } from "./jobs/verify";
 import { CustodialSolanaPayProvider } from "./solana-payments";
 
 const env = loadEnv();
+const db = createDb(env.databaseUrl, { max: 5 });
+
+const appSource = env.xBearerToken ? new XApiBannerSource(env.xBearerToken) : null;
+const banners: BannerSource =
+  env.bannerSource === "dev"
+    ? new DevBannerSource(db)
+    : env.bannerSource === "owned"
+      ? new OwnedTokenBannerSource(db, { clientId: env.xClientId, clientSecret: env.xClientSecret, encKey: env.tokenEncKey }, appSource)
+      : appSource!;
+
+const payments: PaymentsProvider =
+  env.paymentsProvider === "solana" ? new CustodialSolanaPayProvider(new Connection(env.solanaRpcUrl, "confirmed"), env) : new DevPaymentsProvider();
 
 const ctx: JobContext = {
-  db: createDb(env.databaseUrl, { max: 5 }),
-  payments: new CustodialSolanaPayProvider(new Connection(env.solanaRpcUrl, "confirmed"), env),
-  banners: new XApiBannerSource(env.xBearerToken),
-  fetchImage: async (url) => {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`image ${res.status}`);
-    return new Uint8Array(await res.arrayBuffer());
-  },
+  db,
+  payments,
+  banners,
+  loadImage,
+  storeImage: (name, data) => storeImage(name, data, "banners"),
   now: () => new Date(),
   random: Math.random,
-  config: {
-    ...DEFAULT_JOB_CONFIG,
-    checksPerDay: env.checksPerDay,
-    phashThreshold: env.phashThreshold,
-    metricsSyncDays: env.metricsSyncDays,
-  },
+  config: { ...DEFAULT_JOB_CONFIG, checksPerDay: env.checksPerDay, metricsSyncDays: env.metricsSyncDays },
   log: (msg, extra) => console.log(JSON.stringify({ t: new Date().toISOString(), msg, ...extra })),
 };
 
 const jobs: [string, () => Promise<number>][] = [
   ["payments", () => watchPayments(ctx)],
+  ["cycle", () => runCycle(ctx)],
   ["verify", () => verifyBanners(ctx)],
   ["settle", () => settleBookings(ctx)],
-  ["metrics", () => syncSellerMetrics(ctx, env.xBearerToken)],
 ];
+if (env.xBearerToken) jobs.push(["metrics", () => syncSellerMetrics(ctx, env.xBearerToken!)]);
 
 let stopping = false;
 async function tick() {
@@ -53,7 +62,8 @@ async function tick() {
 }
 
 async function main() {
-  ctx.log("worker started", { tickMs: env.tickMs });
+  ctx.log("worker started", { tickMs: env.tickMs, bannerSource: env.bannerSource, payments: env.paymentsProvider });
+  if (env.paymentsProvider === "dev") ctx.log("WARNING: dev payments — no real money moves. Use PAYMENTS_PROVIDER=solana outside dev.");
   while (!stopping) {
     await tick();
     await new Promise((r) => setTimeout(r, env.tickMs));

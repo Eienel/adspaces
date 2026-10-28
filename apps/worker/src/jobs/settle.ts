@@ -5,7 +5,7 @@
  * A crash between steps can never double-pay: a new tx is only prepared when no signature is stored.
  */
 import { bookings, users, verifications, type Booking } from "@adspaces/db";
-import { GO_LIVE_GRACE_MS, decideSettlement, transition, type BookingEvent, type SettlementKind } from "@adspaces/shared";
+import { CYCLE_GRACE_MS, decideSettlement, transition, type BookingEvent, type SettlementKind } from "@adspaces/shared";
 import { and, eq, gte, isNotNull, isNull, lte, or } from "drizzle-orm";
 import type { JobContext } from "../context";
 
@@ -13,6 +13,7 @@ type Plan = { kind: SettlementKind; event: BookingEvent } | { dispute: true };
 
 async function planFor(ctx: JobContext, b: Booking): Promise<Plan> {
   if (b.status === "funded") return { kind: "refund", event: "expire" };
+  if (b.status === "cancelled") return { kind: "refund", event: "cancel" }; // late payment after cutoff
   if (b.status === "disputed") {
     // Set by an admin resolving the dispute (Phase 2 UI).
     return b.settlementKind === "release"
@@ -28,8 +29,10 @@ async function planFor(ctx: JobContext, b: Booking): Promise<Plan> {
   return decision === "release" ? { kind: "release", event: "complete" } : { kind: "refund", event: "fail" };
 }
 
-function eventFor(b: Booking): BookingEvent {
+/** null = no status change (late-payment refund on an already-cancelled booking). */
+function eventFor(b: Booking): BookingEvent | null {
   const kind = b.settlementKind as SettlementKind;
+  if (b.status === "cancelled") return null;
   if (b.status === "funded") return "expire";
   if (b.status === "disputed") return kind === "release" ? "resolve_release" : "resolve_refund";
   return kind === "release" ? "complete" : "fail";
@@ -38,7 +41,7 @@ function eventFor(b: Booking): BookingEvent {
 export async function settleBookings(ctx: JobContext): Promise<number> {
   const { db } = ctx;
   const now = ctx.now();
-  const graceCutoff = new Date(now.getTime() - GO_LIVE_GRACE_MS);
+  const graceCutoff = new Date(now.getTime() - CYCLE_GRACE_MS);
 
   const due = await db
     .select({ booking: bookings, sellerWallet: users.walletPubkey })
@@ -49,7 +52,8 @@ export async function settleBookings(ctx: JobContext): Promise<number> {
         isNull(bookings.settledAt),
         or(
           and(eq(bookings.status, "live"), lte(bookings.endAt, now)),
-          and(eq(bookings.status, "funded"), lte(bookings.fundedAt, graceCutoff)),
+          and(eq(bookings.status, "funded"), lte(bookings.cycleStart, graceCutoff)),
+          and(eq(bookings.status, "cancelled"), isNotNull(bookings.fundingTx)),
           and(eq(bookings.status, "disputed"), isNotNull(bookings.settlementKind)),
         ),
       ),
@@ -62,9 +66,10 @@ export async function settleBookings(ctx: JobContext): Promise<number> {
       if (b.settlementTx) {
         const status = await ctx.payments.txStatus(b.settlementTx, b.settlementValidHeight ?? 0);
         if (status === "confirmed") {
+          const event = eventFor(b);
           const updated = await db
             .update(bookings)
-            .set({ status: transition(b.status, eventFor(b)), settledAt: now, nextCheckAt: null })
+            .set({ ...(event ? { status: transition(b.status, event) } : {}), settledAt: now, nextCheckAt: null })
             .where(and(eq(bookings.id, b.id), eq(bookings.settlementTx, b.settlementTx)))
             .returning({ id: bookings.id });
           if (updated.length) done++;

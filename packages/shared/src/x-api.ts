@@ -117,7 +117,8 @@ export class MockBannerSource implements BannerSource {
   }
 }
 
-/** X serves several banner sizes; 1500x500 matches our creative spec. */
+/** X serves several banner sizes; 1500x500 matches our canvas. Non-X URLs (dev mode, uploads) are returned as-is. */
 export function bannerImageUrl(profileBannerUrl: string): string {
+  if (!profileBannerUrl.includes("pbs.twimg.com/profile_banners/")) return profileBannerUrl;
   return /\/\d+x\d+$/.test(profileBannerUrl) ? profileBannerUrl : `${profileBannerUrl}/1500x500`;
 }
