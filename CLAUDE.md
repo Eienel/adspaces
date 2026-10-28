@@ -1,6 +1,6 @@
 # AdSpaces — Agent Guide
 
-**Read `docs/README.md` first.** It indexes the full plan, architecture and decisions.
+**Read `docs/HANDOFF.md` first** (current state + next steps), then `docs/README.md` (index of plan, architecture and decisions).
 
 ## Before you start
 1. Read `docs/roadmap.md` and the newest file in `docs/log/`.
@@ -17,6 +17,7 @@
 - Everything must stay testable at $0 (dev mode, ADR-0013). Don't add features that only work with live X/Solana.
 
 ## When done
+- **Update `docs/HANDOFF.md`** (state table, in-progress checklist, next steps, gotchas).
 - Tick `docs/roadmap.md`, write/update `docs/log/YYYY-MM-DD-*.md` (done / next / open questions).
 
 ## Commands

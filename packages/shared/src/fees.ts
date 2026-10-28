@@ -21,3 +21,20 @@ export function bookingTotal(pricePerDayMicro: number, days: number): number {
   if (!Number.isSafeInteger(total)) throw new Error("total too large");
   return total;
 }
+
+/**
+ * Platform fee by booking size (ADR-0014): bigger bookings pay a lower %. Max 2.5%, min 0.75%.
+ * `minUsdcMicro` is inclusive. Keep this table in sync with docs/04-payments-escrow.md and the home page.
+ */
+export const FEE_TIERS: readonly { minUsdcMicro: number; feeBps: number }[] = [
+  { minUsdcMicro: 500_000_000, feeBps: 75 },
+  { minUsdcMicro: 100_000_000, feeBps: 150 },
+  { minUsdcMicro: 0, feeBps: 250 },
+];
+
+export function feeBpsForAmount(amountMicro: number): number {
+  return FEE_TIERS.find((t) => amountMicro >= t.minUsdcMicro)!.feeBps;
+}
+
+/** Beta limit per booking while escrow is custodial (ADR-0015). Override with MAX_BOOKING_USDC. */
+export const DEFAULT_MAX_BOOKING_USDC = 1_000;

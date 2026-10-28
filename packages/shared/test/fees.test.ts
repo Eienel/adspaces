@@ -39,3 +39,23 @@ describe("fees", () => {
     expect(bookingTotal(5_000_000, 7)).toBe(35_000_000);
   });
 });
+
+describe("fee tiers", () => {
+  it("charges 2.5% / 1.5% / 0.75% by booking size", async () => {
+    const { feeBpsForAmount, FEE_TIERS } = await import("../src/fees");
+    expect(feeBpsForAmount(0)).toBe(250);
+    expect(feeBpsForAmount(99_999_999)).toBe(250);
+    expect(feeBpsForAmount(100_000_000)).toBe(150);
+    expect(feeBpsForAmount(499_999_999)).toBe(150);
+    expect(feeBpsForAmount(500_000_000)).toBe(75);
+    expect(feeBpsForAmount(1_000_000_000)).toBe(75);
+    expect(Math.max(...FEE_TIERS.map((t) => t.feeBps))).toBeLessThanOrEqual(250);
+  });
+  it("fee + payout always equals the amount at every tier", () => {
+    for (const amt of [14_000_000, 100_000_000, 499_999_999, 500_000_000, 999_999_999]) {
+      const { fee, payout } = splitPayment(amt, amt >= 500_000_000 ? 75 : amt >= 100_000_000 ? 150 : 250);
+      expect(fee + payout).toBe(amt);
+    }
+    expect(splitPayment(14_000_000, 250)).toEqual({ fee: 350_000, payout: 13_650_000 });
+  });
+});
