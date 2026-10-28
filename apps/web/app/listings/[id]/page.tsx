@@ -30,7 +30,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             {l.seller.avatarUrl && <img src={l.seller.avatarUrl} alt="" className="h-12 w-12 rounded-full" />}
             <div>
               <div className="text-lg font-semibold">
-                {l.seller.name} {l.seller.verified && <span className="text-sky-400">✓</span>}
+                {l.seller.name} {l.seller.verified && <span className="text-[var(--accent-2)]">✓</span>}
               </div>
               <a href={`https://x.com/${l.seller.handle}`} target="_blank" className="text-sm muted hover:underline">
                 @{l.seller.handle}
@@ -71,7 +71,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius-sm)] bg-black/20 p-3">
+    <div className="rounded-[var(--radius-sm)] bg-[var(--panel-2)] p-3">
       <div className="text-xs muted">{label}</div>
       <div className="font-semibold">{value}</div>
     </div>

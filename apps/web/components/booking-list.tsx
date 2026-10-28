@@ -17,7 +17,7 @@ export function BookingList({ title, rows, me, empty = "Nothing yet." }: { title
           const myTurn = b.status === "requested" && proposer !== me;
           return (
             <div key={b.id} className="flex flex-wrap items-center gap-4 py-3">
-              <img src={creative.imageUrl} alt="" className="h-12 rounded-lg object-cover" style={{ aspectRatio: `${segment.w}/${segment.h}` }} />
+              <img src={creative.imageUrl} alt="" className="h-12 rounded-[var(--radius-sm)] border border-[var(--border)] object-cover" style={{ aspectRatio: `${segment.w}/${segment.h}` }} />
               <div className="min-w-40 flex-1">
                 <Link href={`/bookings/${b.id}`} className="font-medium hover:underline">
                   {isSeller ? `${displayName(advertiser)} → slot ${segment.idx + 1}` : `Slot ${segment.idx + 1} on @${seller.handle}`}

@@ -56,7 +56,7 @@ export function CreativePicker({ shape, value, onChange }: { shape: SegmentShape
             <img src={c.imageUrl} alt="" className="h-16 object-cover" style={{ aspectRatio: `${w}/${h}` }} />
           </button>
         ))}
-        <label className="flex h-16 cursor-pointer items-center justify-center rounded-[var(--radius-sm)] border-2 border-dashed border-[var(--border)] px-4 text-xs muted hover:bg-white/5">
+        <label className="flex h-16 cursor-pointer items-center justify-center rounded-[var(--radius-sm)] border-2 border-dashed border-[var(--border-strong)] px-4 text-xs muted hover:bg-[var(--sand)]">
           {busy ? "Uploading…" : "+ Upload"}
           <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
         </label>

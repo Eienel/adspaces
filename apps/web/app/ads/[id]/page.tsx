@@ -26,7 +26,7 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       <div className="panel space-y-4">
-        <img src={c.creativeUrl} alt="" className="w-full rounded-[var(--radius-sm)] bg-black/30 object-contain" />
+        <img src={c.creativeUrl} alt="" className="w-full rounded-[var(--radius-sm)] bg-[var(--panel-2)] object-contain" />
         <h1 className="text-2xl font-bold">{c.title}</h1>
         <div className="text-sm muted">by {displayName(c.business)}</div>
         {c.brief && <p className="whitespace-pre-wrap text-sm">{c.brief}</p>}

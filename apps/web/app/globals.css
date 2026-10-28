@@ -1,37 +1,254 @@
 @import "tailwindcss";
 
 /*
- * Design tokens. The whole look lives here (colours, radii, fonts) so a restyle
- * (e.g. matching a reference site) only touches this block + layout chrome.
+ * Design tokens. The whole look lives here (colours, radii, fonts, motion) so a restyle only touches
+ * this block + layout chrome. It blends wisprflow.ai (cream paper, serif display, rounded colour bands,
+ * bordered nav) with blink.cash (sky-blue glass hero, black pills, lime highlights, floating stickers).
+ * Measurements and the reasoning: docs/11-design-system.md.
  */
-:root {
-  --bg: #0b0d12;
-  --panel: #131722;
-  --panel-2: #1a1f2d;
-  --border: #232838;
-  --text: #e8eaf0;
-  --muted: #8b93a7;
-  --accent: #7c5cff;
-  --accent-2: #22d3ee;
-  --ok: #34d399;
-  --warn: #fbbf24;
-  --bad: #f87171;
-  --radius: 1rem;
-  --radius-sm: 0.75rem;
+@font-face {
+  font-family: "EB Garamond";
+  src: url("/fonts/EBGaramond-Variable.woff2") format("woff2");
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "EB Garamond";
+  src: url("/fonts/EBGaramond-Italic-Variable.woff2") format("woff2");
+  font-weight: 400 800;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Figtree";
+  src: url("/fonts/Figtree-Variable.woff2") format("woff2");
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
 }
 
-body {
-  background: var(--bg);
-  color: var(--text);
+:root {
+  /* paper (wispr) */
+  --bg: #ffffeb;
+  --panel: #fffdf9;
+  --panel-2: #f5f4f0;
+  --sand: #e4e4d0; /* beige blocks, nav tabs track */
+  --border: #e4e4d0;
+  --border-strong: #d1d1c1;
+  /* ink */
+  --text: #1a1a1a;
+  --muted: rgb(26 26 26 / 0.66);
+  --on-dark: #ffffeb;
+  --on-dark-muted: rgb(255 255 235 / 0.72);
+  --dark: #1a1a1a;
+  --dark-2: #26262a;
+  --green: #034f46; /* wispr band */
+  /* sky (blink) */
+  --sky-top: #56a4ff;
+  --sky-bottom: #64ddff;
+  --glass: rgb(255 255 255 / 0.15);
+  /* brand + card colours */
+  --accent: #034f46; /* links, selected borders, progress (wispr green); primary buttons are ink */
+  --accent-2: #1d9bf0; /* verified tick */
+  --lime: #eaff03; /* blink highlight: selected slot, selection */
+  --lavender: #f0d7ff; /* wispr CTA */
+  --coral: #ff6c4c;
+  --peach: #ffa946;
+  --pink: #ffbcf2;
+  --mint: #3ed598;
+  /* status */
+  --ok: #0f7b4f;
+  --warn: #a15c07;
+  --bad: #d80027;
+  /* shape */
+  --radius-band: 5rem; /* 80px: big colour sections */
+  --radius-xl: 2rem; /* glass hero card, sand/dark blocks */
+  --radius-lg: 1.5rem; /* tilted feature cards */
+  --radius: 1rem; /* panels */
+  --radius-sm: 0.625rem; /* inputs, thumbnails, nav box */
+  --pill: 999px;
+  /* depth */
+  --shadow-card: 0 30px 70px -48px rgb(26 26 26 / 0.45);
+  --shadow-pop: 0 12px 28px -12px rgb(0 0 0 / 0.4);
+  --shadow-glass: 0 3px 18px rgb(0 0 0 / 0.08), inset 0 1.5px 3px rgb(255 255 255 / 0.4);
+  --blur: 22px;
+  /* type */
+  --font-sans: "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --font-serif: "EB Garamond", "Iowan Old Style", Georgia, serif;
+  --tracking-display: -0.03em;
+  /* motion (curves and timings from the taste-skill motion study: strong ease-outs, nothing ease-in) */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1); /* quint out: UI moves under 600ms */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1); /* reveals of 800ms+, line rises */
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1); /* wipes, shutters */
+  --t-press: 140ms;
+  --t-hover: 180ms;
+  --t-ui: 240ms;
+  --t-reveal: 800ms;
+  --stagger-line: 110ms;
+  --stagger-item: 70ms;
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-weight: 450;
+    /* Full-bleed .band sections use 100vw, which includes a desktop scrollbar; clip (not hidden) keeps sticky working. */
+    overflow-x: clip;
+  }
+  /* Page titles across the app use the serif display face. */
+  h1,
+  h2 {
+    font-family: var(--font-serif);
+    font-weight: 400 !important;
+    letter-spacing: var(--tracking-display);
+    line-height: 1.02;
+  }
+  /* Page titles (pages set text-2xl/3xl for the old sans face); serif needs more size to hold the page. */
+  main h1:not(.display) {
+    font-size: clamp(2.25rem, 1.6rem + 2.2vw, 3.25rem) !important;
+  }
+  h1 em,
+  h2 em,
+  .display em,
+  .section-title em {
+    font-style: italic;
+  }
+  ::selection {
+    background: var(--lime);
+    color: var(--dark);
+  }
+  :focus-visible {
+    outline: 2px solid var(--dark);
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
-  .panel { @apply border border-[var(--border)] bg-[var(--panel)] p-5; border-radius: var(--radius); }
-  .btn { @apply inline-flex items-center justify-center gap-2 bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50; border-radius: var(--radius-sm); }
-  .btn-ghost { @apply inline-flex items-center justify-center gap-2 border border-[var(--border)] px-4 py-2 text-sm font-semibold transition hover:bg-white/5 disabled:opacity-50; border-radius: var(--radius-sm); }
-  .input { @apply w-full border border-[var(--border)] bg-black/30 px-3 py-2 text-sm outline-none focus:border-[var(--accent)]; border-radius: var(--radius-sm); }
-  .label { @apply mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--muted)]; }
+  /* surfaces */
+  .panel { @apply border border-[var(--border)] bg-[var(--panel)] p-5; border-radius: var(--radius); box-shadow: var(--shadow-card); transition: box-shadow var(--t-ui) var(--ease), transform var(--t-ui) var(--ease), border-color var(--t-hover) ease; }
+  /* Section titles inside panels stay sans: they are UI labels, not headlines. */
+  .panel h2, .panel-sand h2 { font-family: var(--font-sans); font-weight: 650 !important; letter-spacing: -0.01em; }
+  .panel-sand { @apply bg-[var(--sand)] p-6; border-radius: var(--radius-xl); }
+  .panel-glass { @apply p-6 text-white; background: var(--glass); backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur)); border-radius: var(--radius-xl); box-shadow: var(--shadow-glass); }
+  .panel-dark { @apply p-6 text-[var(--on-dark)]; background: linear-gradient(to bottom, var(--dark-2), #0c0c0d); border-radius: var(--radius-xl); }
+
+  /* colour bands (full-bleed sections with big rounded corners) */
+  .band { @apply relative left-1/2 w-screen -translate-x-1/2 px-4 py-16 sm:py-24; }
+  .band-sky { background: linear-gradient(var(--sky-top) 17%, var(--sky-bottom) 102%); }
+  .band-green { @apply text-[var(--on-dark)]; background: var(--green); }
+  .band-dark { @apply text-[var(--on-dark)]; background: var(--dark); }
+  .band-round { border-radius: 2.5rem; }
+  @media (min-width: 640px) { .band-round { border-radius: var(--radius-band); } }
+
+  /* buttons */
+  .btn { @apply inline-flex h-11 items-center justify-center gap-2 bg-[var(--dark)] px-5 text-sm font-semibold whitespace-nowrap text-[var(--on-dark)] disabled:cursor-not-allowed disabled:opacity-40; border-radius: var(--pill); transition: transform var(--t-press) var(--ease), background-color var(--t-hover) ease, opacity var(--t-hover) ease; }
+  .btn-ghost { @apply inline-flex h-11 items-center justify-center gap-2 border border-[var(--border-strong)] bg-[var(--panel)] px-5 text-sm font-semibold whitespace-nowrap text-[var(--text)] disabled:cursor-not-allowed disabled:opacity-40; border-radius: var(--pill); transition: transform var(--t-press) var(--ease), background-color var(--t-hover) ease; }
+  /* Wispr's "Download for free": lavender with a 2px ink outline. */
+  .btn-cta { @apply inline-flex h-11 items-center justify-center gap-2 border-2 border-[var(--dark)] bg-[var(--lavender)] px-5 text-sm font-semibold whitespace-nowrap text-[var(--dark)]; border-radius: var(--radius-sm); transition: transform var(--t-press) var(--ease), box-shadow var(--t-hover) ease; }
+  .btn-white { @apply inline-flex h-11 items-center justify-center gap-2 bg-white px-5 text-sm font-semibold whitespace-nowrap text-[var(--dark)]; border-radius: var(--pill); box-shadow: 0 3px 9px rgb(0 0 0 / 0.12); transition: transform var(--t-press) var(--ease); }
+  :is(.btn, .btn-ghost, .btn-cta, .btn-white):not(:disabled):active { transform: scale(0.97); }
+  /* Hover behind (hover: hover) so taps on phones don't leave it stuck. */
+  @media (hover: hover) and (pointer: fine) {
+    .btn:not(:disabled):hover { background: #333; transform: translateY(-1px); }
+    .btn-ghost:not(:disabled):hover { background: var(--sand); transform: translateY(-1px); }
+    .btn-cta:hover { transform: translateY(-1px); box-shadow: 0 3px 0 var(--dark); }
+    .btn-white:hover { transform: translateY(-1px); }
+    /* One small, consistent card response (cards that link somewhere only). */
+    .lift:hover { transform: translateY(-3px); border-color: var(--border-strong); box-shadow: 0 40px 80px -44px rgb(26 26 26 / 0.55); }
+  }
+  .btn-lg { @apply h-[52px] px-[26px] text-base sm:h-14 sm:px-7 sm:text-[17px]; }
+
+  /* forms */
+  .input { @apply w-full border border-[var(--border-strong)] bg-[var(--panel)] px-3.5 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-black/35 focus:border-[var(--dark)]; border-radius: var(--radius-sm); transition: border-color var(--t-hover) ease, box-shadow var(--t-hover) ease; }
+  .input:focus { box-shadow: 0 0 0 3px var(--lavender); }
+  .label { @apply mb-1.5 block text-[13px] font-semibold text-[var(--text)]; }
   .muted { @apply text-[var(--muted)]; }
-  .chip { @apply rounded-full border border-[var(--border)] px-3 py-1 text-xs; }
-  .chip-on { @apply border-[var(--accent)] text-white; }
+  .chip { @apply rounded-full border border-[var(--border-strong)] bg-[var(--panel)] px-3 py-1 text-xs font-medium transition; }
+  button.chip:hover { @apply bg-[var(--sand)]; }
+  .chip-on { @apply border-[var(--dark)] bg-[var(--dark)] text-[var(--on-dark)]; }
+  button.chip-on:hover { @apply bg-[var(--dark)]; }
+
+  /* type */
+  .display { @apply text-[42px] sm:text-[80px] lg:text-[96px]; font-family: var(--font-serif); font-weight: 400; letter-spacing: var(--tracking-display); line-height: 0.95; }
+  .section-title { @apply text-[40px] sm:text-[56px] lg:text-[64px]; font-family: var(--font-serif); font-weight: 400; letter-spacing: var(--tracking-display); line-height: 0.98; }
+  .eyebrow { @apply text-xs font-medium tracking-[0.12em] uppercase; }
+  .link { @apply font-semibold underline decoration-current/30 underline-offset-4 transition hover:decoration-current; }
+
+  /* nav (wispr's bordered box + segmented tabs, with blink's glass blur) */
+  .nav-box { @apply border-2 border-[var(--border)]; background: rgb(255 255 235 / 0.82); backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur)); border-radius: var(--radius-sm); }
+  .nav-tabs { @apply inline-flex items-center gap-0.5 rounded-full bg-[var(--sand)] p-0.5; }
+  .nav-tab { @apply rounded-full px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-[var(--text)] transition hover:bg-white/50; }
+  .nav-tab-on { @apply bg-[var(--panel)] hover:bg-[var(--panel)]; }
+
+  /* stickers (blink's floating note chips) */
+  .sticker { @apply rounded-[14px] px-3.5 py-2 text-sm font-semibold whitespace-nowrap; box-shadow: var(--shadow-pop); }
+}
+
+/*
+ * Motion. Rules (docs/11-design-system.md §Motion): the static page is complete without it; every
+ * animation lives in a no-preference block so reduced motion = the finished state; no infinite loops.
+ *
+ * Hero load sequence, all settled by ~1.2s: headline lines rise out of a mask, then the lead + actions,
+ * then the banner opens like a shutter. Nothing in the header animates.
+ */
+.lines .line { display: block; overflow: hidden; padding-bottom: 0.1em; margin-bottom: -0.1em; }
+.lines [data-line] { display: block; }
+@media (prefers-reduced-motion: no-preference) {
+  .lines [data-line] { transform: translateY(105%); animation: line-up var(--t-reveal) var(--ease-expo) forwards; animation-delay: calc(100ms + var(--i, 0) * var(--stagger-line)); }
+  [data-load] { opacity: 0; transform: translateY(12px); animation: load-rise 500ms var(--ease) forwards; animation-delay: var(--d, 400ms); }
+  [data-open] { clip-path: inset(0 0 100% 0 round var(--radius)); animation: load-open 1000ms var(--ease-in-out) 200ms forwards; }
+  /* Stickers arrive once, dealt like notes; afterwards they only drift with scroll (below). */
+  .sticker-in { opacity: 0; transform: translateY(16px) rotate(calc(var(--tilt, 0deg) * 2)) scale(0.96); animation: deal 700ms var(--ease-expo) forwards; animation-delay: var(--d, 500ms); }
+}
+@keyframes line-up { to { transform: none; } }
+@keyframes load-rise { to { opacity: 1; transform: none; } }
+@keyframes load-open { to { clip-path: inset(0 0 0 0 round var(--radius)); } }
+@keyframes deal { to { opacity: 1; transform: rotate(var(--tilt, 0deg)); } }
+.sticker-in { rotate: 0deg; transform: rotate(var(--tilt, 0deg)); }
+
+/*
+ * Scroll: CSS scroll timelines only (no JS, no listeners). Browsers without them simply show the
+ * finished state, so nothing can be left blank. Used on 2–3 sections, not on every block.
+ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Items of a reveal group rise in reading order as the group enters (stagger via --i). */
+    .reveal > * { animation: reveal-rise linear both; animation-timeline: view(); animation-range: entry calc(5% + var(--i, 0) * 6%) entry calc(55% + var(--i, 0) * 6%); }
+    /* Small parallax drift (< 8% travel) for the hero stickers. */
+    .drift { animation: drift linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+  }
+}
+@keyframes reveal-rise { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@keyframes drift { from { translate: 0 -10px; } to { translate: 0 30px; } }
+
+/* Solana wallet-adapter button → ink pill, same as .btn */
+.wallet-adapter-button {
+  font-family: var(--font-sans) !important;
+  height: 44px !important;
+  padding: 0 20px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  border-radius: var(--pill) !important;
+}
+.wallet-adapter-button-trigger {
+  background: var(--dark) !important;
+  color: var(--on-dark) !important;
+}
+.wallet-adapter-button:not([disabled]):hover {
+  background: #333 !important;
+}
+.wallet-adapter-button-start-icon,
+.wallet-adapter-button-start-icon img {
+  width: 20px !important;
+  height: 20px !important;
+}
+.wallet-adapter-modal-wrapper {
+  font-family: var(--font-sans) !important;
+  border-radius: var(--radius-xl) !important;
 }

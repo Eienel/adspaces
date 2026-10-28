@@ -110,11 +110,11 @@ export function BannerEditor(props: { initial: Initial | null; capMicro: number;
               key={id}
               disabled={props.locked && id !== init?.layout}
               onClick={() => setLayout(id)}
-              className={`rounded-[var(--radius-sm)] border p-2 text-left text-xs transition disabled:opacity-40 ${layout === id ? "border-[var(--accent)] bg-[var(--accent)]/10" : "border-[var(--border)] hover:bg-white/5"}`}
+              className={`rounded-[var(--radius-sm)] border p-2 text-left text-xs transition disabled:opacity-40 ${layout === id ? "border-[var(--dark)] bg-[var(--lavender)]/60" : "border-[var(--border-strong)] bg-[var(--panel)] hover:bg-[var(--sand)]"}`}
             >
-              <div className="relative mb-2 aspect-[3/1] w-full rounded bg-white/5">
+              <div className="relative mb-2 aspect-[3/1] w-full rounded bg-[var(--sand)]">
                 {layoutSegments(id).map((s) => (
-                  <div key={s.idx} className="absolute inset-y-0 border border-white/40 bg-white/10" style={{ left: `${(s.rect.x / 1500) * 100}%`, width: `${(s.rect.w / 1500) * 100}%` }} />
+                  <div key={s.idx} className="absolute inset-y-0 border border-black/25 bg-white/70" style={{ left: `${(s.rect.x / 1500) * 100}%`, width: `${(s.rect.w / 1500) * 100}%` }} />
                 ))}
               </div>
               {LAYOUT_LABEL[id]}
@@ -141,7 +141,7 @@ export function BannerEditor(props: { initial: Initial | null; capMicro: number;
             </div>
           ))}
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-white/5">
+        <div className="h-2 overflow-hidden rounded-full bg-[var(--sand)]">
           <div className={`h-full ${over ? "bg-[var(--bad)]" : "bg-[var(--accent)]"}`} style={{ width: `${Math.min(100, (total / props.capMicro) * 100) || 0}%` }} />
         </div>
         <p className={`text-xs ${over ? "text-[var(--bad)]" : "muted"}`}>
@@ -174,7 +174,7 @@ export function BannerEditor(props: { initial: Initial | null; capMicro: number;
       <Chips label="Never run ads about" selected={blocked} onToggle={(c) => toggle(blocked, setBlocked, c)} danger />
 
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={showTag} onChange={(e) => setShowTag(e.target.checked)} />
+        <input type="checkbox" className="accent-[var(--dark)]" checked={showTag} onChange={(e) => setShowTag(e.target.checked)} />
         Show a small “Ad space available” tag on unsold slots
       </label>
 

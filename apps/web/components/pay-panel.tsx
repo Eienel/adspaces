@@ -66,7 +66,7 @@ export function PayPanel({ bookingId, solanaPayUrl, escrow, mint, reference, amo
   return (
     <div className="grid gap-5 sm:grid-cols-[220px_1fr]">
       <div className="space-y-2 text-center">
-        {qr ? <img src={qr} alt="Solana Pay QR" className="rounded-xl bg-white p-1" /> : <div className="h-[220px] rounded-xl bg-white/5" />}
+        {qr ? <img src={qr} alt="Solana Pay QR" className="rounded-[var(--radius)] border border-[var(--border)] bg-white p-1" /> : <div className="h-[220px] rounded-[var(--radius)] bg-[var(--sand)]" />}
         <div className="text-xs muted">Scan with Phantom / Solflare mobile</div>
       </div>
       <div className="space-y-3">
@@ -80,11 +80,11 @@ export function PayPanel({ bookingId, solanaPayUrl, escrow, mint, reference, amo
           )}
         </div>
         {sig && (
-          <p className="text-sm text-emerald-400">
+          <p className="text-sm text-[var(--ok)]">
             Payment sent. Waiting for finalization (~15s); this page updates automatically.
           </p>
         )}
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-[var(--bad)]">{error}</p>}
         <p className="text-xs muted">
           Funds are held in AdSpaces escrow until the booking ends, then released to the seller (minus the platform fee) or
           refunded to you if the banner wasn&apos;t kept up.

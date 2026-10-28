@@ -133,7 +133,7 @@ export default async function CreatorDashboard() {
                     const booked = avail.taken.get(s.id)?.has(c.toISOString());
                     return (
                       <td key={c.toISOString()}>
-                        <span className={`inline-block h-3 w-3 rounded-full ${booked ? "bg-[var(--accent)]" : "bg-white/10"}`} title={booked ? "Booked" : "Free"} />
+                        <span className={`inline-block h-3 w-3 rounded-full ${booked ? "bg-[var(--accent)]" : "bg-[var(--sand)]"}`} title={booked ? "Booked" : "Free"} />
                       </td>
                     );
                   })}

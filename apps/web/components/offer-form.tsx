@@ -27,7 +27,7 @@ export function OfferForm(p: { campaignId: string; weeks: number; segments: MySe
   if (!p.segments.length) {
     return (
       <p className="text-sm muted">
-        You don&apos;t have a free slot of this shape at or under this budget. <Link className="text-[var(--accent)]" href="/dashboard">Edit your banner layout →</Link>
+        You don&apos;t have a free slot of this shape at or under this budget. <Link className="link text-[var(--accent)]" href="/dashboard">Edit your banner layout →</Link>
       </p>
     );
   }

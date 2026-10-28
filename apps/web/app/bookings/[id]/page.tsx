@@ -45,7 +45,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
       {stepIndex >= 0 && (
         <ol className="grid grid-cols-5 gap-2 text-center text-xs">
           {STEPS.map((s, i) => (
-            <li key={s} className={`rounded-lg py-2 ${i <= stepIndex ? "bg-[var(--accent)]/20 text-white" : "bg-white/5 muted"}`}>
+            <li key={s} className={`rounded-full py-2 font-semibold ${i <= stepIndex ? "bg-[var(--accent)] text-[var(--on-dark)]" : "bg-[var(--sand)] muted"}`}>
               {STEP_LABEL[s]}
             </li>
           ))}

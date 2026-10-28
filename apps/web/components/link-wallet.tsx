@@ -36,7 +36,7 @@ export function LinkWallet({ linked }: { linked: string | null }) {
       <div className="text-sm">
         {linked ? (
           <>
-            Payout wallet: <code className="break-all rounded bg-black/30 px-1">{linked}</code>
+            Payout wallet: <code className="break-all rounded-md bg-[var(--sand)] px-1.5 py-0.5">{linked}</code>
           </>
         ) : (
           <span className="muted">No wallet linked. You need one to get paid.</span>
@@ -50,7 +50,7 @@ export function LinkWallet({ linked }: { linked: string | null }) {
           </button>
         )}
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-[var(--bad)]">{error}</p>}
     </div>
   );
 }

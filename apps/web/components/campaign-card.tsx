@@ -5,10 +5,10 @@ import { displayName, usd } from "@/lib/format";
 
 export function CampaignCard({ c }: { c: CampaignCardData }) {
   return (
-    <Link href={`/ads/${c.id}`} className="panel block space-y-3 transition hover:border-[var(--accent)]">
-      <img src={c.creativeUrl} alt="" className="max-h-40 w-full rounded-[var(--radius-sm)] bg-black/30 object-contain" />
+    <Link href={`/ads/${c.id}`} className="panel lift block space-y-3">
+      <img src={c.creativeUrl} alt="" className="max-h-40 w-full rounded-[var(--radius-sm)] bg-[var(--panel-2)] object-contain" />
       <div>
-        <div className="truncate font-semibold">{c.title}</div>
+        <div className="truncate font-[family-name:var(--font-serif)] text-xl tracking-tight">{c.title}</div>
         <div className="text-xs muted">by {displayName(c.business)}</div>
       </div>
       <div className="flex flex-wrap gap-2 text-xs">
