@@ -1,6 +1,6 @@
 /**
  * Image storage shared by web + worker. Server-only.
- * Vercel Blob when BLOB_READ_WRITE_TOKEN is set (required on Vercel); otherwise a local dir served by
+ * Vercel Blob when connected (BLOB_READ_WRITE_TOKEN or BLOB_STORE_ID; required on Vercel); otherwise a local dir served by
  * the web app at /api/uploads/<name> (dev / self-hosting). Both apps must use the same UPLOAD_DIR.
  */
 import { put } from "@vercel/blob";
@@ -19,14 +19,22 @@ export function contentTypeFor(name: string): string | undefined {
   return TYPES[name.split(".").pop() ?? ""];
 }
 
+/**
+ * Vercel Blob is configured either with a read-write token (classic) or, for newer stores, BLOB_STORE_ID +
+ * Vercel's OIDC token (set automatically on Vercel; @vercel/blob picks it up).
+ */
+export function blobConfigured(env = process.env): boolean {
+  return Boolean(env.BLOB_READ_WRITE_TOKEN || env.BLOB_STORE_ID);
+}
+
 export async function storeImage(name: string, data: Uint8Array, prefix = "images"): Promise<string> {
   if (!SAFE_NAME.test(name)) throw new Error(`Unsafe file name ${name}`);
   const contentType = contentTypeFor(name)!;
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
+  if (blobConfigured()) {
     const blob = await put(`${prefix}/${name}`, Buffer.from(data), { access: "public", contentType });
     return blob.url;
   }
-  if (process.env.VERCEL) throw new Error("BLOB_READ_WRITE_TOKEN is required on Vercel");
+  if (process.env.VERCEL) throw new Error("Vercel Blob isn't connected (need BLOB_STORE_ID or BLOB_READ_WRITE_TOKEN)");
   await mkdir(uploadDir(), { recursive: true });
   await writeFile(path.join(uploadDir(), name), data);
   return `/api/uploads/${name}`;

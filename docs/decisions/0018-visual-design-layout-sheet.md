@@ -1,4 +1,4 @@
-# ADR-0017: Visual design: "layout sheet" concept, self-hosted OFL fonts
+# ADR-0018: Visual design: "layout sheet" concept, self-hosted OFL fonts
 
 - **Status:** Accepted
 - **Date:** 2026-10-28

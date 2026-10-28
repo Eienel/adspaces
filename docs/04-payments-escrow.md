@@ -18,10 +18,11 @@ There's no money yet to deploy an on-chain program, so the platform holds escrow
 6. **Underpayments** (less than the booking amount) aren't matched and stay in escrow → manual refund for now (Phase 2: auto-refund).
 7. **Setup:** `pnpm --filter @adspaces/worker setup-escrow` generates the escrow keypair and creates its USDC account.
 
-### Fee math (`packages/shared/src/fees.ts`)
-- `fee = floor(amount * fee_bps / 10_000)`, `payout = amount - fee` (rounding always favors the seller).
+### Fee math (`packages/shared/src/fees.ts`, ADR-0014)
+- Tiered by booking total (`feeBpsForAmount`): **under $100 → 2.5%**, **$100–$499.99 → 1.5%**, **$500+ → 0.75%**.
+- `fee = floor(amount * fee_bps / 10_000)`, `payout = amount - fee` (rounding always favors the creator).
 - `fee_bps` is copied onto the booking at creation, so later fee changes don't affect existing deals.
-- Default `PLATFORM_FEE_BPS=1000` (10%) — **placeholder, owner to decide.**
+- Beta cap: **$1,000 per booking** (`MAX_BOOKING_USDC`, ADR-0015). The worker logs an alert if the escrow balance is below what is owed.
 
 ### Costs
 - Solana tx fee ≈ 0.000005 SOL. Creating a recipient's USDC token account if missing ≈ 0.002 SOL of rent (paid by the escrow wallet; it needs a small SOL balance).
