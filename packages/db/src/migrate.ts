@@ -7,12 +7,14 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { fileURLToPath } from "node:url";
 import postgres from "postgres";
 
-// Direct (non-pooled) connections first: Neon/Vercel integrations set these names.
-const CANDIDATES = ["DATABASE_URL_UNPOOLED", "POSTGRES_URL_NON_POOLING", "DATABASE_URL", "POSTGRES_URL"] as const;
+import { databaseLikeVars, databaseUrlVar } from "./url";
 
-const name = CANDIDATES.find((k) => process.env[k]);
+// Direct (non-pooled) connection first; prefixed names (e.g. ADSPACES_DATABASE_URL) also work.
+const name = databaseUrlVar("direct");
 if (!name) {
-  console.error(`[migrate] No database URL found. Set one of: ${CANDIDATES.join(", ")}.`);
+  console.error("[migrate] No database URL found. Expected DATABASE_URL (or DATABASE_URL_UNPOOLED / POSTGRES_URL, optionally with a prefix).");
+  const seen = databaseLikeVars();
+  console.error(`[migrate] Database-like env vars visible to this build: ${seen.length ? seen.join(", ") : "none"}`);
   console.error("[migrate] On Vercel: Storage → your Neon database → Connect project, with Production AND Preview ticked, then redeploy.");
   process.exit(1);
 }
