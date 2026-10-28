@@ -24,18 +24,33 @@ AdSpaces = marketplace where X creators split their **banner into ad slots** and
 | Escrow settlement (release with fee / refund), idempotent | tested with fake chain; **real Solana untested** | `jobs/settle.ts`, `src/solana-payments.ts` |
 | $0 dev mode (fake X, simulated payments/banners, `run-at` clock) | tested | ADR-0013, README |
 
+## Parallel sessions (2026-10-28)
+Two sessions are running at once. To avoid merge conflicts:
+| Session | Branch | Owns |
+|---|---|---|
+| **Launch** (session 3) | `claude/pensive-faraday-5frreq` | backend + launch: `apps/worker/**`, `.github/**`, `packages/**`, `apps/web/lib/**`, `apps/web/app/api/**`, `apps/web/instrumentation.ts`, `docs/**` (except the design section below) |
+| **Design** (new) | `claude/design-restyle` (branch off the latest `claude/pensive-faraday-5frreq`) | the look: `apps/web/app/globals.css`, `apps/web/app/layout.tsx` (header/footer **styling**), `apps/web/app/page.tsx` (home), `apps/web/components/**` (visual markup/classes only), fonts/assets in `apps/web/public/**`, plus `docs/11-design-system.md` (new) |
+
+Rules for the design session:
+- Don't change logic, props, data fetching, API calls or `lib/**`. Restyle with classes/markup only. If a component needs new data, note it in `docs/11-design-system.md` for the launch session.
+- Keep the existing text content (fees, beta cap, terms links), restyled.
+- Use CSS tokens in `globals.css` for every colour/radius/font, so future tweaks stay one place.
+- Browse https://blink.cash and https://wspr.ai with Playwright first (network access is Full). Record what you copy (palette, fonts, spacing, motion) in `docs/11-design-system.md`.
+- Before finishing: `pnpm typecheck` + `pnpm --filter @adspaces/web build`, screenshots (desktop + mobile), push your branch, and update the "Design" row here.
+- Merging: whichever session finishes second merges the other branch (`git merge`, no rebase) and resolves conflicts in favour of design for styling and launch for logic.
+
 ## In progress (session 3: launch-ready beta)
 Plan: `/root/.claude/plans/…` is not in the repo, so the plan is copied here:
 - [x] Fee tiers by booking size: <$100 → 2.5%, $100–499 → 1.5%, ≥$500 → 0.75% (`packages/shared/src/fees.ts` `feeBpsForAmount`), tests added
-- [ ] Use tiers + **$1,000 beta cap** (`MAX_BOOKING_USDC`) in `apps/web/lib/bookings.ts`; show the fee in booking/offer forms; fee table on home
+- [x] Use tiers + **$1,000 beta cap** (`MAX_BOOKING_USDC`) in `apps/web/lib/bookings.ts`; fee line in booking/offer forms (`components/fee-line.tsx`); fee table on home (`components/fee-table.tsx`)
 - [ ] Worker `--once` mode + `.github/workflows/worker.yml` (cron every 5 min, free because the repo is public) + `ci.yml`
-- [ ] Production guards (no dev payments/login in prod; required env check at startup)
-- [ ] `/terms` + `/privacy` beta pages, footer links
+- [~] Production guards: web startup check done (`apps/web/instrumentation.ts`); worker guard pending
+- [x] `/terms` + `/privacy` beta pages, footer links
 - [ ] `docs/10-launch-runbook.md` (X app, Neon, Solana wallets, Vercel, GitHub secrets, $1 smoke test)
 - [ ] ADR-0014 (fees), ADR-0015 (beta cap), ADR-0016 (GitHub Actions worker); update 04/06/00 docs
 
 ## Next after that
-1. **Redesign to feel like https://blink.cash and https://wspr.ai.** The owner set network access to Full for new sessions, so **browse both sites with Playwright first** (screenshots, fonts, colours, spacing, motion). Then restyle: tokens at the top of `apps/web/app/globals.css`, layout chrome in `app/layout.tsx`, home hero in `app/page.tsx`.
+1. **Redesign (being done in parallel by the Design session, see above)** to feel like https://blink.cash and https://wspr.ai. The owner set network access to Full for new sessions, so **browse both sites with Playwright first** (screenshots, fonts, colours, spacing, motion). Then restyle: tokens at the top of `apps/web/app/globals.css`, layout chrome in `app/layout.tsx`, home hero in `app/page.tsx`.
 2. Evaluate the **Blink SDK** (blink.cash) for the payment step (ADR-0009), now that the site is reachable.
 3. Owner launch steps (see the runbook once written): X app + first credit purchase ($20 bonus), Neon, escrow wallet + SOL, Vercel, GitHub secrets.
 

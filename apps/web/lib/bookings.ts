@@ -4,6 +4,7 @@ import {
   bookingRequestSchema,
   bookingTotal,
   cycleStart,
+  feeBpsForAmount,
   isBookable,
   offerSchema,
   rangesOverlap,
@@ -14,9 +15,18 @@ import { Keypair } from "@solana/web3.js";
 import { aliasedTable, and, desc, eq, inArray, lte, ne, or } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "./db";
-import { PLATFORM_FEE_BPS } from "./env";
+import { MAX_BOOKING_MICRO, MAX_BOOKING_USDC } from "./env";
 import { HOLDING } from "./listings";
 import { HttpError } from "./session";
+
+/** Price a booking: tiered fee (ADR-0014) and the beta cap (ADR-0015). */
+function priceBooking(pricePerDayMicro: number, weeks: number) {
+  const amountUsdc = bookingTotal(pricePerDayMicro, 7 * weeks);
+  if (amountUsdc > MAX_BOOKING_MICRO) {
+    throw new HttpError(400, `During the beta, bookings are capped at $${MAX_BOOKING_USDC.toLocaleString("en-US")}. Try fewer weeks.`);
+  }
+  return { amountUsdc, feeBps: feeBpsForAmount(amountUsdc) };
+}
 
 type Tx = Parameters<Parameters<ReturnType<typeof db>["transaction"]>[0]>[0];
 
@@ -58,6 +68,7 @@ export async function requestBooking(advertiserId: string, raw: unknown) {
     const [c] = await db().select({ id: adCampaigns.id }).from(adCampaigns).where(and(eq(adCampaigns.id, input.campaignId), eq(adCampaigns.businessId, advertiserId)));
     if (!c) throw new HttpError(400, "Unknown ad");
   }
+  const price = priceBooking(segment.pricePerDayUsdc, input.weeks);
   await assertFree(db(), segment.id, input.cycleStart, input.weeks);
 
   const [row] = await db()
@@ -73,8 +84,7 @@ export async function requestBooking(advertiserId: string, raw: unknown) {
       adCategory: input.adCategory,
       cycleStart: input.cycleStart,
       weeks: input.weeks,
-      amountUsdc: bookingTotal(segment.pricePerDayUsdc, 7 * input.weeks),
-      feeBps: PLATFORM_FEE_BPS,
+      ...price,
     })
     .returning();
   return row!;
@@ -97,6 +107,7 @@ export async function offerToCampaign(sellerId: string, raw: unknown) {
     .from(bookings)
     .where(and(eq(bookings.campaignId, campaign.id), eq(bookings.segmentId, segment.id), eq(bookings.status, "requested")));
   if (dup.length) throw new HttpError(409, "You've already offered this segment to this ad");
+  const price = priceBooking(segment.pricePerDayUsdc, campaign.weeks);
   await assertFree(db(), segment.id, input.cycleStart, campaign.weeks);
 
   const [row] = await db()
@@ -112,8 +123,7 @@ export async function offerToCampaign(sellerId: string, raw: unknown) {
       adCategory: campaign.adCategory,
       cycleStart: input.cycleStart,
       weeks: campaign.weeks,
-      amountUsdc: bookingTotal(segment.pricePerDayUsdc, 7 * campaign.weeks),
-      feeBps: PLATFORM_FEE_BPS,
+      ...price,
     })
     .returning();
   return row!;

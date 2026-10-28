@@ -1,6 +1,7 @@
 import { estimatedCpmUsdc } from "@adspaces/shared";
 import { notFound } from "next/navigation";
 import { SegmentBooker } from "@/components/segment-booker";
+import { publicConfig } from "@/lib/env";
 import { compact } from "@/lib/format";
 import { getListing, segmentAvailability } from "@/lib/listings";
 import { isUuid } from "@/lib/session";
@@ -44,6 +45,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             minWeeks={l.minWeeks}
             maxWeeks={l.maxWeeks}
             blocked={l.blockedCategories}
+            maxBookingUsdc={publicConfig.maxBookingUsdc}
             segments={l.segments.map((s) => ({ id: s.id, idx: s.idx, shape: s.shape, x: s.x, y: s.y, w: s.w, h: s.h, pricePerDayUsdc: s.pricePerDayUsdc, taken: [...(taken.get(s.id) ?? [])] }))}
           />
         </div>

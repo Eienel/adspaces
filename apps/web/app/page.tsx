@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BannerPreview } from "@/components/banner-preview";
 import { CampaignCard } from "@/components/campaign-card";
+import { FeeTable } from "@/components/fee-table";
 import { ListingCard } from "@/components/listing-card";
 import { listOpenCampaigns } from "@/lib/campaigns";
 import { searchListings } from "@/lib/listings";
@@ -61,6 +62,14 @@ export default async function Home() {
             <div className="mt-1 text-sm muted">{d}</div>
           </div>
         ))}
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold">Simple fees</h2>
+          <p className="text-sm muted">Free to list and free to browse. We take a small cut only when a booking pays out, and less on bigger deals.</p>
+        </div>
+        <FeeTable />
       </section>
 
       <section className="space-y-4">

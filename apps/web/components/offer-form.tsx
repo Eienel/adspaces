@@ -4,6 +4,7 @@ import { SHAPE_LABEL, microToUsdc, type SegmentShape } from "@adspaces/shared";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { FeeLine } from "@/components/fee-line";
 import { api } from "@/lib/client";
 
 interface MySegment {
@@ -15,7 +16,7 @@ interface MySegment {
 }
 
 /** Creator offers one of their matching slots to a business's ad. */
-export function OfferForm(p: { campaignId: string; weeks: number; segments: MySegment[]; cycles: string[]; maxPricePerDayUsdc: number }) {
+export function OfferForm(p: { campaignId: string; weeks: number; segments: MySegment[]; cycles: string[]; maxPricePerDayUsdc: number; maxBookingUsdc: number }) {
   const router = useRouter();
   const [segmentId, setSegmentId] = useState(p.segments[0]?.id ?? "");
   const [start, setStart] = useState("");
@@ -70,8 +71,11 @@ export function OfferForm(p: { campaignId: string; weeks: number; segments: MySe
       </div>
       {seg && (
         <p className="text-sm">
-          You&apos;d earn about <b>${microToUsdc(seg.pricePerDayUsdc * 7 * p.weeks)}</b> before the platform fee.
+          Booking total <b>${microToUsdc(seg.pricePerDayUsdc * 7 * p.weeks)}</b>
         </p>
+      )}
+      {seg && (
+        <FeeLine totalMicro={seg.pricePerDayUsdc * 7 * p.weeks} maxBookingUsdc={p.maxBookingUsdc} />
       )}
       <button className="btn" disabled={busy || !start}>
         {busy ? "Sending…" : "Offer my slot"}

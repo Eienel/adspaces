@@ -52,6 +52,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </header>
           <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+          <footer className="border-t border-[var(--border)]">
+            <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-xs muted">
+              <span>AdSpaces beta · bookings capped at ${publicConfig.maxBookingUsdc.toLocaleString("en-US")} · not affiliated with X Corp.</span>
+              <span className="flex gap-4">
+                <Link href="/terms">Terms</Link>
+                <Link href="/privacy">Privacy</Link>
+              </span>
+            </div>
+          </footer>
         </Providers>
       </body>
     </html>

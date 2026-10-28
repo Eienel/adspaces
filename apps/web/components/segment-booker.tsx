@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BannerPreview } from "@/components/banner-preview";
 import { CreativePicker } from "@/components/creative-picker";
+import { FeeLine } from "@/components/fee-line";
 import { SignInLink } from "@/components/user-menu";
 import { api } from "@/lib/client";
 
@@ -31,6 +32,7 @@ interface Props {
   minWeeks: number;
   maxWeeks: number;
   blocked: string[];
+  maxBookingUsdc: number;
 }
 
 const weekLabel = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
@@ -128,8 +130,9 @@ export function SegmentBooker(p: Props) {
               <div className="text-xs muted">Total</div>
               <div className="text-2xl font-bold">${microToUsdc(seg.pricePerDayUsdc * 7 * (weeks || 0))}</div>
               <div className="text-xs muted">USDC · {weeks} {weeks === 1 ? "week" : "weeks"}</div>
+              <FeeLine totalMicro={seg.pricePerDayUsdc * 7 * (weeks || 0)} maxBookingUsdc={p.maxBookingUsdc} />
             </div>
-            <button className="btn" disabled={busy || startIdx < 0 || !runFree(startIdx)}>
+            <button className="btn" disabled={busy || startIdx < 0 || !runFree(startIdx) || seg.pricePerDayUsdc * 7 * weeks > p.maxBookingUsdc * 1_000_000}>
               {busy ? "Sending…" : "Request booking"}
             </button>
           </div>

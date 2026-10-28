@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { OfferForm } from "@/components/offer-form";
 import { SignInLink } from "@/components/user-menu";
 import { getCampaign } from "@/lib/campaigns";
+import { publicConfig } from "@/lib/env";
 import { displayName, usd } from "@/lib/format";
 import { getListingBySeller, segmentAvailability } from "@/lib/listings";
 import { currentUserId, isUuid } from "@/lib/session";
@@ -56,7 +57,7 @@ export default async function AdPage({ params }: { params: Promise<{ id: string 
             List your banner first on the <a className="text-[var(--accent)]" href="/dashboard">creator dashboard</a>.
           </p>
         ) : (
-          <OfferForm campaignId={c.id} weeks={c.weeks} segments={matching} cycles={avail!.cycles.map((x) => x.toISOString())} maxPricePerDayUsdc={c.maxPricePerDayUsdc} />
+          <OfferForm campaignId={c.id} weeks={c.weeks} segments={matching} cycles={avail!.cycles.map((x) => x.toISOString())} maxPricePerDayUsdc={c.maxPricePerDayUsdc} maxBookingUsdc={publicConfig.maxBookingUsdc} />
         )}
       </aside>
     </div>
